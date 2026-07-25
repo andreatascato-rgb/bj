@@ -10,6 +10,9 @@ export interface CardMemory {
   lastResult: "again" | "good" | null;
 }
 
+const MINUTE_MS = 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function defaultMemory(): CardMemory {
   return {
     easiness: 2.5,
@@ -32,8 +35,8 @@ export function review(
     repetitions = 0;
     interval = 0;
   } else {
-    if (repetitions === 0) interval = 1;
-    else if (repetitions === 1) interval = 3;
+    if (repetitions === 0) interval = 0;
+    else if (repetitions === 1) interval = 1;
     else interval = Math.round(interval * easiness);
     repetitions += 1;
   }
@@ -43,8 +46,18 @@ export function review(
     easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)),
   );
 
-  const dayMs = 24 * 60 * 60 * 1000;
-  const dueAt = now + interval * dayMs;
+  // Early reviews: short delay so the same session can strengthen a cell.
+  // Later: day-scale SM-2 intervals.
+  let dueAt: number;
+  if (quality < 3) {
+    dueAt = now; // wrong → immediately due again
+  } else if (repetitions === 1) {
+    dueAt = now + 12 * MINUTE_MS;
+  } else if (repetitions === 2) {
+    dueAt = now + DAY_MS;
+  } else {
+    dueAt = now + interval * DAY_MS;
+  }
 
   return {
     easiness,
@@ -60,13 +73,28 @@ export function isDue(mem: CardMemory | undefined, now = Date.now()): boolean {
   return mem.dueAt <= now;
 }
 
+/** Seen once correctly — on the path to solid. */
+export function isLearning(mem: CardMemory): boolean {
+  return mem.repetitions === 1 && mem.lastResult === "good";
+}
+
 export function isSolid(mem: CardMemory): boolean {
   return mem.repetitions >= 2 && mem.easiness >= 2.2;
+}
+
+/** Partial credit so early practice moves the mastery bar. */
+function cellProgress(mem: CardMemory): number {
+  if (isSolid(mem)) return 1;
+  if (isLearning(mem)) return 0.45;
+  if (mem.lastResult === "again") return 0.12;
+  if (mem.repetitions > 0) return 0.2;
+  return 0;
 }
 
 export function masteryScore(memories: Record<string, CardMemory>): {
   percent: number;
   solid: number;
+  learning: number;
   total: number;
   weak: number;
   due: number;
@@ -74,15 +102,21 @@ export function masteryScore(memories: Record<string, CardMemory>): {
   const expected = DRILL_CELL_TOTAL;
   const entries = Object.values(memories);
   const solid = entries.filter(isSolid).length;
+  const learning = entries.filter(isLearning).length;
   const weak = entries.filter((m) => m.lastResult === "again").length;
   const due = entries.filter((m) => isDue(m)).length;
-  // Unseen cells also "due" for learning pressure — approximate via expected - touched
   const touched = entries.length;
   const unseen = Math.max(0, expected - touched);
-  const percent = Math.min(100, Math.round((solid / expected) * 100));
+
+  const score = entries.reduce((sum, m) => sum + cellProgress(m), 0);
+  let percent = Math.min(100, Math.round((score / expected) * 100));
+  // At least 1% once any real progress exists (avoid "half hour still 0%")
+  if (score > 0 && percent === 0) percent = 1;
+
   return {
     percent,
     solid,
+    learning,
     total: expected,
     weak,
     due: due + unseen,
@@ -96,18 +130,22 @@ export function countByKind(
   const totals = { hard: 100, soft: 80, pair: 100 } as const;
   const total = totals[kind];
   const prefix = `${kind}:`;
+  let score = 0;
   let solid = 0;
   let weak = 0;
   for (const [id, mem] of Object.entries(memories)) {
     if (!id.startsWith(prefix)) continue;
+    score += cellProgress(mem);
     if (isSolid(mem)) solid += 1;
     if (mem.lastResult === "again") weak += 1;
   }
+  let percent = Math.min(100, Math.round((score / total) * 100));
+  if (score > 0 && percent === 0) percent = 1;
   return {
     solid,
     weak,
     total,
-    percent: Math.min(100, Math.round((solid / total) * 100)),
+    percent,
   };
 }
 

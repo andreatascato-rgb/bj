@@ -50,7 +50,7 @@ export default function StudioHome() {
     );
   }
 
-  const { percent: mastery, weak, due } = masteryScore(memory);
+  const { percent: mastery, weak, due, solid, learning } = masteryScore(memory);
   const focus = weakFocusCells(memory, 3);
   const hard = countByKind(memory, "hard");
   const soft = countByKind(memory, "soft");
@@ -149,9 +149,9 @@ export default function StudioHome() {
           ))}
         </div>
         <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-mist">
-          {weak > 0 && (
-            <span className="text-danger">{weak} deboli</span>
-          )}
+          {solid > 0 && <span>{solid} solide</span>}
+          {learning > 0 && <span>{learning} in corso</span>}
+          {weak > 0 && <span className="text-danger">{weak} deboli</span>}
           <span>~{Math.min(due, 99)} da ripassare</span>
           {stats.sessions > 0 && (
             <span>
