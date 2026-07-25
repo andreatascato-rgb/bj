@@ -403,9 +403,6 @@ function DrillInner() {
       <p className="mt-7 text-center text-sm font-medium text-mist">
         Cosa fai in questa mano?
       </p>
-      <p className="mt-1 text-center text-[10px] tracking-wide text-mist/55">
-        1–5 · H S D P R
-      </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         {visibleChoices.map((c, i) => {
@@ -421,7 +418,7 @@ function DrillInner() {
               whileTap={{ scale: 0.97 }}
               disabled={revealed}
               onClick={() => answer(c)}
-              className={`relative flex min-h-[3.5rem] items-center justify-center rounded-2xl border px-3 py-3.5 text-[15px] font-semibold transition ${
+              className={`flex min-h-[3.5rem] items-center justify-center rounded-2xl border px-3 py-3.5 text-[15px] font-semibold transition ${
                 alone ? "col-span-2" : ""
               } ${
                 isRight
@@ -431,9 +428,6 @@ function DrillInner() {
                     : "border-ivory/15 bg-felt-deep/45 text-ivory"
               }`}
             >
-              <span className="absolute top-2 left-2.5 text-[10px] font-semibold tabular-nums text-mist/45">
-                {i + 1}
-              </span>
               {ACTION_LABELS[c]}
             </motion.button>
           );
