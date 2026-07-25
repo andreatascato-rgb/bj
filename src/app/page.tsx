@@ -17,6 +17,11 @@ import {
   useStats,
 } from "@/lib/client";
 import { dismissInstallHint } from "@/lib/storage";
+import {
+  isStandalone,
+  promptInstall,
+  useCanInstall,
+} from "@/components/ui/PwaChrome";
 import { rulesLabel } from "@/engine";
 import { Onboarding } from "@/components/studio/Onboarding";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
@@ -28,7 +33,9 @@ export default function StudioHome() {
   const rules = useRules();
   const stats = useStats();
   const installDismissed = useInstallHintDismissed();
+  const canInstall = useCanInstall();
   const [forceOnboard, setForceOnboard] = useState(false);
+  const [installBusy, setInstallBusy] = useState(false);
 
   if (!isClient) return <LoadingMark />;
 
@@ -68,7 +75,8 @@ export default function StudioHome() {
           ? "Mantieni la memoria con un warm-up breve prima del casinò."
           : "Allena i punti deboli per salire di mastery.";
 
-  const showInstall = !installDismissed && mastery < 80;
+  const showInstall =
+    !installDismissed && mastery < 80 && !isStandalone();
 
   return (
     <PageEnter>
@@ -206,19 +214,34 @@ export default function StudioHome() {
       {showInstall && (
         <div className="surface mt-8 rounded-2xl p-4">
           <p className="text-sm leading-relaxed text-mist">
-            Sul telefono: menu del browser →{" "}
-            <span className="font-semibold text-champagne-bright">
-              Aggiungi alla schermata Home
-            </span>
-            . Funziona offline, senza store.
+            {canInstall
+              ? "Installa MANO sulla Home: apre come app, anche offline."
+              : "Sul telefono: menu del browser → Aggiungi alla schermata Home. Funziona offline, senza store."}
           </p>
-          <button
-            type="button"
-            onClick={() => dismissInstallHint()}
-            className="mt-3 text-xs font-semibold text-mist underline-offset-4 hover:text-ivory hover:underline"
-          >
-            Nascondi
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {canInstall && (
+              <button
+                type="button"
+                disabled={installBusy}
+                onClick={async () => {
+                  setInstallBusy(true);
+                  const outcome = await promptInstall();
+                  setInstallBusy(false);
+                  if (outcome === "accepted") dismissInstallHint();
+                }}
+                className="rounded-xl bg-champagne px-3.5 py-2 text-xs font-semibold text-felt-deep disabled:opacity-60"
+              >
+                Installa
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => dismissInstallHint()}
+              className="text-xs font-semibold text-mist underline-offset-4 hover:text-ivory hover:underline"
+            >
+              Nascondi
+            </button>
+          </div>
         </div>
       )}
 

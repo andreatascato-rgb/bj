@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   PRESETS,
   type DoubleRule,
@@ -16,6 +16,12 @@ import {
   resetOnboarding,
   saveRules,
 } from "@/lib/storage";
+import {
+  feedback,
+  isSoundEnabled,
+  setSoundEnabled,
+  subscribeSound,
+} from "@/lib/feedback";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
 import {
   FancySelect,
@@ -25,6 +31,11 @@ import {
 export default function RegolePage() {
   const isClient = useIsClient();
   const stored = useRules();
+  const soundOn = useSyncExternalStore(
+    subscribeSound,
+    isSoundEnabled,
+    () => true,
+  );
   const [draft, setDraft] = useState<TableRules | null>(null);
   const [saved, setSaved] = useState(false);
   const [cleared, setCleared] = useState(false);
@@ -186,6 +197,14 @@ export default function RegolePage() {
           label="Late surrender"
           checked={rules.surrender}
           onChange={(v) => update("surrender", v)}
+        />
+        <Toggle
+          label="Suoni di feedback"
+          checked={soundOn}
+          onChange={(v) => {
+            setSoundEnabled(v);
+            if (v) feedback("tap");
+          }}
         />
       </div>
 

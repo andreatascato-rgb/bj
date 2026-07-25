@@ -25,6 +25,7 @@ import {
   recordSession,
   upsertMemory,
 } from "@/lib/storage";
+import { feedback } from "@/lib/feedback";
 import { PlayingCard } from "@/components/ui/RankPicker";
 import { SegmentedControl } from "@/components/ui/FancySelect";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
@@ -168,9 +169,7 @@ function DrillInner() {
       }
       const mem = getOrCreateMemory(current.id);
       upsertMemory(current.id, review(mem, ok));
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate(ok ? [10] : [20, 30, 20]);
-      }
+      feedback(ok ? "correct" : "wrong");
     },
     [current, advice, picked],
   );
@@ -204,7 +203,10 @@ function DrillInner() {
   useEffect(() => {
     if (!picked || !advice || picked !== advice.action) return;
     if (reduceMotion) return;
-    const t = window.setTimeout(() => next(), 650);
+    const t = window.setTimeout(() => {
+      feedback("advance");
+      next();
+    }, 650);
     return () => window.clearTimeout(t);
   }, [picked, advice, next, reduceMotion]);
 

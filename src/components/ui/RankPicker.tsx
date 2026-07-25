@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Rank } from "@/engine/types";
 import { dealCard } from "@/lib/motion";
+import { feedback } from "@/lib/feedback";
 
 const RANKS: { value: Rank; label: string }[] = [
   { value: 1, label: "A" },
@@ -25,10 +26,8 @@ export function suitForRank(rank: Rank): (typeof SUITS)[number] {
   return SUITS[(rank - 1) % 4];
 }
 
-function haptic() {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(8);
-  }
+function hapticTap() {
+  feedback("tap");
 }
 
 function keyToRank(key: string): Rank | null {
@@ -65,7 +64,7 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
       const rank = keyToRank(e.key);
       if (rank == null) return;
       e.preventDefault();
-      haptic();
+      hapticTap();
       onSelect(rank);
     }
     window.addEventListener("keydown", onKey);
@@ -87,7 +86,7 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
               type="button"
               whileTap={{ scale: 0.94 }}
               onClick={() => {
-                haptic();
+                hapticTap();
                 onSelect(r.value);
               }}
               className={`flex min-h-14 items-center justify-center rounded-2xl border font-display font-semibold tabular-nums transition ${
@@ -156,6 +155,12 @@ export function PlayingCard({
     rank == null ? "?" : rank === 1 ? "A" : rank === 10 ? "10" : String(rank);
   const suit = rank != null ? suitForRank(rank) : null;
   const red = suit === "♥" || suit === "♦";
+
+  useEffect(() => {
+    if (rank == null || faceDown || reduce) return;
+    const t = window.setTimeout(() => feedback("deal"), Math.round(delay * 1000));
+    return () => window.clearTimeout(t);
+  }, [rank, faceDown, delay, reduce]);
 
   const inner = faceDown ? (
     <div

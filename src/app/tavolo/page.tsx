@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   evaluateHand,
@@ -12,6 +12,7 @@ import {
   type Rank,
 } from "@/engine";
 import { useIsClient, useRules } from "@/lib/client";
+import { feedback } from "@/lib/feedback";
 import Link from "next/link";
 import { PlayingCard, RankPicker } from "@/components/ui/RankPicker";
 import {
@@ -42,6 +43,18 @@ export default function TavoloPage() {
   }, [rules, dealer, activeCards]);
 
   const insurance = useMemo(() => getInsuranceAdvice(1), []);
+  const bustAnnounced = useRef(false);
+  const isBustPreview = evaluateHand(
+    splitHands ? splitHands[activeSplit] : cards,
+  ).busted;
+
+  useEffect(() => {
+    if (isBustPreview && phase === "result" && !bustAnnounced.current) {
+      bustAnnounced.current = true;
+      feedback("bust");
+    }
+    if (!isBustPreview) bustAnnounced.current = false;
+  }, [isBustPreview, phase]);
 
   const selectDealer = useCallback((r: Rank) => {
     setDealer(r);
@@ -127,6 +140,7 @@ export default function TavoloPage() {
   }
 
   const isBust = hand.busted;
+
   const needsHit =
     advice?.action === "hit" &&
     !hand.busted &&

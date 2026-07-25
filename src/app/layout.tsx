@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { AppShell } from "@/components/ui/AppShell";
-import { ServiceWorkerRegister } from "@/components/ui/ServiceWorkerRegister";
+import {
+  InstallPromptCapture,
+  UpdateToast,
+} from "@/components/ui/PwaChrome";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -53,7 +56,8 @@ export default function RootLayout({
       className={`${fraunces.variable} ${manrope.variable} h-full bg-felt-deep text-ivory`}
     >
       <body className="min-h-full bg-felt-deep text-ivory antialiased">
-        <ServiceWorkerRegister />
+        <InstallPromptCapture />
+        <UpdateToast />
         <AppShell>{children}</AppShell>
       </body>
     </html>
