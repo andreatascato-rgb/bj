@@ -1,4 +1,4 @@
-# MANO — Architecture (v0.1.0)
+# MANO — Architecture (v0.2.0)
 
 Agent-oriented map of the codebase. Product intent: `docs/product.md`. Freeze: `docs/CHECKPOINT.md`.
 
@@ -6,7 +6,8 @@ Agent-oriented map of the codebase. Product intent: `docs/product.md`. Freeze: `
 
 - **Build:** `next build` with `output: 'export'` → `out/`
 - **Hosting:** any static host (Cloudflare Pages / GitHub Pages)
-- **Data:** `localStorage` keys `mano.rules.v1`, `mano.memory.v1`, `mano.onboarded.v1`
+- **Data:** `localStorage` keys `mano.rules.v1`, `mano.memory.v1`, `mano.onboarded.v1`, `mano.stats.v1`, `mano.installHint.v1`
+- **Backup:** export/import JSON from Regole (`exportBackup` / `importBackup`)
 - **Reactivity:** `useSyncExternalStore` in `src/lib/client.ts` over `subscribeStorage` in `src/lib/storage.ts` (cached snapshots to avoid infinite re-renders)
 
 ## Route → responsibility

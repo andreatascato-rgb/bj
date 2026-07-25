@@ -7,7 +7,7 @@ alwaysApply: true
 # MANO rules
 
 - Read `AGENTS.md` and `docs/CHECKPOINT.md` before substantial changes.
-- v0.1.0 product/UX/strategy locks stay unless the user explicitly reopens them.
+- v0.2.0 product/UX/strategy locks stay unless the user explicitly reopens them.
 - Zero paid services/deps. Static export only. No backend in v1.
 - Strategy moves only from `src/engine` + `src/data/strategy` — never invent plays.
 - Default ruleset is EU/IT ENHC, not Vegas peek.

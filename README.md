@@ -2,7 +2,7 @@
 
 Coach personale di **basic strategy** blackjack — Europa-first, offline, **€0**.
 
-**Versione congelata:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) · **v0.1.0**
+**Versione congelata:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) · **v0.2.0**
 
 ## Cosa fa
 

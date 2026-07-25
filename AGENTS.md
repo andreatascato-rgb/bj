@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Personal blackjack basic-strategy coach. Europe-first. Zero cost. You (the agent) are the sole builder; the user evaluates via chat only.
 
-**Current freeze:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) — **v0.1.0** (2026-07-25). Read it before changing product shape.
+**Current freeze:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) — **v0.2.0** (2026-07-25). Read it before changing product shape.
 
 ## Product promise
 
@@ -59,14 +59,16 @@ public/             manifest, sw.js, icon
 - Insurance basic strategy = No
 - See `docs/strategy.md`
 
-## User flows (v0.1.0 complete)
+## User flows (v0.2.0 complete)
 
 1. **Onboarding** → hole-card + preset → Studio (nav hidden)
-2. **Studio** → mastery + CTA (hard start / warm-up) → Allena / Tabella / Tavolo
-3. **Allena** → queue SM-2 → feedback → end screen (score, mastery Δ, next kind, Tavolo/Studio)
-4. **Tavolo** → Banco → (insurance if A) → carte → mossa → hit/split sequence or Nuova mano
-5. **Tabella** → hard/soft/pair + heatmap → cell detail → Allena category
-6. **Regole** → presets + fine rules → save; reset progress; re-onboard
+2. **Studio** → mastery + kind bars + Focus oggi → Allena / Tabella / Tavolo; install hint dismissible
+3. **Allena** → queue SM-2 (`?cell=` for one situation) → keyboard 1–5 · auto-advance on correct → end screen (streak, missed)
+4. **Tavolo** → Banco → (insurance if A) → carte → mossa → hit/split or bust → Nuova mano; rank keys A/2–9/0
+5. **Tabella** → hard/soft/pair + heatmap → cell panel → Allena situazione
+6. **Regole** → presets + fine rules → save; export/import backup; reset progress; re-onboard
+
+Client persistence: `src/lib/storage.ts` + `useSyncExternalStore` (`mano.rules/memory/stats/onboarded`).
 
 ## UI craft (locked)
 

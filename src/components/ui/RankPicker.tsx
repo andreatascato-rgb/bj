@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { Rank } from "@/engine/types";
 import { dealCard } from "@/lib/motion";
@@ -17,20 +18,60 @@ const RANKS: { value: Rank; label: string }[] = [
   { value: 10, label: "10" },
 ];
 
+const SUITS = ["♠", "♥", "♦", "♣"] as const;
+
+/** Decorative suit only — not used for strategy. */
+export function suitForRank(rank: Rank): (typeof SUITS)[number] {
+  return SUITS[(rank - 1) % 4];
+}
+
 function haptic() {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(8);
   }
 }
 
+function keyToRank(key: string): Rank | null {
+  const k = key.toLowerCase();
+  if (k === "a") return 1;
+  if (k === "0" || k === "t") return 10;
+  const n = Number(k);
+  if (n >= 2 && n <= 9) return n as Rank;
+  return null;
+}
+
 interface Props {
   label: string;
   value: Rank | null;
   onSelect: (r: Rank) => void;
-  compact?: boolean;
+  /** When true, listen for keyboard shortcuts. */
+  keyboard?: boolean;
 }
 
-export function RankPicker({ label, value, onSelect }: Props) {
+export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
+  useEffect(() => {
+    if (!keyboard) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const rank = keyToRank(e.key);
+      if (rank == null) return;
+      e.preventDefault();
+      haptic();
+      onSelect(rank);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [keyboard, onSelect]);
+
   return (
     <div className="w-full">
       <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-champagne-bright">
@@ -59,6 +100,11 @@ export function RankPicker({ label, value, onSelect }: Props) {
           );
         })}
       </div>
+      {keyboard && (
+        <p className="mt-2 text-center text-[10px] text-mist/60">
+          Tasti A · 2–9 · 0/T
+        </p>
+      )}
     </div>
   );
 }
@@ -75,6 +121,8 @@ export function PlayingCard({
   const reduce = useReducedMotion();
   const label =
     rank == null ? "?" : rank === 1 ? "A" : rank === 10 ? "10" : String(rank);
+  const suit = rank != null ? suitForRank(rank) : null;
+  const red = suit === "♥" || suit === "♦";
 
   const inner = faceDown ? (
     <div
@@ -89,15 +137,32 @@ export function PlayingCard({
     </div>
   ) : (
     <div className="relative flex h-28 w-[4.5rem] flex-col justify-between rounded-2xl border border-black/10 bg-gradient-to-br from-[#fffaf2] to-[#efe2cf] p-2.5 text-felt-deep shadow-[0_14px_30px_rgba(0,0,0,0.35)]">
-      <span className="font-display text-xl font-semibold leading-none">
-        {label}
+      <div className="flex flex-col leading-none">
+        <span className="font-display text-xl font-semibold">{label}</span>
+        <span
+          className={`mt-0.5 text-sm ${red ? "text-[#9b2c2c]" : "text-felt-deep"}`}
+          aria-hidden
+        >
+          {suit}
+        </span>
+      </div>
+      <span
+        className={`absolute inset-0 flex items-center justify-center font-display text-4xl opacity-[0.12] ${
+          red ? "text-[#9b2c2c]" : ""
+        }`}
+        aria-hidden
+      >
+        {suit}
       </span>
-      <span className="absolute inset-0 flex items-center justify-center font-display text-3xl opacity-[0.08]">
-        {label}
-      </span>
-      <span className="self-end font-display text-xl font-semibold leading-none rotate-180">
-        {label}
-      </span>
+      <div className="flex rotate-180 flex-col leading-none self-end">
+        <span className="font-display text-xl font-semibold">{label}</span>
+        <span
+          className={`mt-0.5 text-sm ${red ? "text-[#9b2c2c]" : "text-felt-deep"}`}
+          aria-hidden
+        >
+          {suit}
+        </span>
+      </div>
     </div>
   );
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAdvice } from "./advise";
+import { getAdvice, getInsuranceAdvice } from "./advise";
 import { DEFAULT_RULES, type TableRules } from "./types";
 
 const peek: TableRules = {
@@ -51,6 +51,12 @@ describe("basic strategy engine", () => {
     expect(a?.action).toBe("double");
   });
 
+  it("H17 peek: doubles soft 19 vs 4 and 5", () => {
+    const h17: TableRules = { ...peek, soft17: "H17" };
+    expect(getAdvice([1, 8], 4, h17)?.action).toBe("double");
+    expect(getAdvice([1, 8], 5, h17)?.action).toBe("double");
+  });
+
   it("ENHC wins over H17 on 11 vs Ace", () => {
     const both: TableRules = { ...enhc, soft17: "H17" };
     const a = getAdvice([5, 6], 1, both);
@@ -82,5 +88,25 @@ describe("basic strategy engine", () => {
   it("never splits tens", () => {
     const a = getAdvice([10, 10], 6, peek);
     expect(a?.action).toBe("stand");
+  });
+
+  it("splits pairs of 6 vs 5 and 6 on peek", () => {
+    expect(getAdvice([6, 6], 5, peek)?.action).toBe("split");
+    expect(getAdvice([6, 6], 6, peek)?.action).toBe("split");
+  });
+
+  it("surrender fallback: Rh becomes hit when surrender off", () => {
+    const a = getAdvice([10, 6], 10, { ...peek, surrender: false });
+    expect(a?.action).toBe("hit");
+  });
+
+  it("surrender when allowed: hard 16 vs 10", () => {
+    const a = getAdvice([10, 6], 10, { ...peek, surrender: true });
+    expect(a?.action).toBe("surrender");
+  });
+
+  it("insurance basic strategy is always no", () => {
+    const a = getInsuranceAdvice(1);
+    expect(a.action).toBe("insurance_no");
   });
 });

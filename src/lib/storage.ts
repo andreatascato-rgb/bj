@@ -4,6 +4,32 @@ import { defaultMemory, type CardMemory } from "@/learning/sm2";
 const RULES_KEY = "mano.rules.v1";
 const MEMORY_KEY = "mano.memory.v1";
 const ONBOARD_KEY = "mano.onboarded.v1";
+const STATS_KEY = "mano.stats.v1";
+const INSTALL_HINT_KEY = "mano.installHint.v1";
+const BACKUP_VERSION = 1;
+
+export interface AppStats {
+  sessions: number;
+  lastAccuracy: number | null;
+  lastSessionAt: number | null;
+  bestStreak: number;
+}
+
+export interface ManoBackup {
+  version: number;
+  exportedAt: number;
+  rules: TableRules;
+  memory: Record<string, CardMemory>;
+  stats: AppStats;
+  onboarded: boolean;
+}
+
+const DEFAULT_STATS: AppStats = {
+  sessions: 0,
+  lastAccuracy: null,
+  lastSessionAt: null,
+  bestStreak: 0,
+};
 
 const listeners = new Set<() => void>();
 
@@ -11,7 +37,10 @@ let rulesCache: TableRules = DEFAULT_RULES;
 let rulesRaw: string | null | undefined;
 let memoryCache: Record<string, CardMemory> = {};
 let memoryRaw: string | null | undefined;
+let statsCache: AppStats = DEFAULT_STATS;
+let statsRaw: string | null | undefined;
 let onboardCache: boolean | undefined;
+let installHintCache: boolean | undefined;
 
 function bumpStorage(): void {
   listeners.forEach((l) => l());
@@ -24,7 +53,9 @@ export function subscribeStorage(cb: () => void): () => void {
     if (!e.key?.startsWith("mano.")) return;
     rulesRaw = undefined;
     memoryRaw = undefined;
+    statsRaw = undefined;
     onboardCache = undefined;
+    installHintCache = undefined;
     cb();
   };
   if (typeof window !== "undefined") {
@@ -94,6 +125,39 @@ export function getOrCreateMemory(id: string): CardMemory {
   return map[id] ?? defaultMemory();
 }
 
+export function loadStats(): AppStats {
+  if (typeof window === "undefined") return DEFAULT_STATS;
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (raw === statsRaw) return statsCache;
+    statsRaw = raw;
+    statsCache = raw ? { ...DEFAULT_STATS, ...JSON.parse(raw) } : DEFAULT_STATS;
+    return statsCache;
+  } catch {
+    return DEFAULT_STATS;
+  }
+}
+
+export function saveStats(stats: AppStats): void {
+  const raw = JSON.stringify(stats);
+  localStorage.setItem(STATS_KEY, raw);
+  statsRaw = raw;
+  statsCache = stats;
+  bumpStorage();
+}
+
+export function recordSession(accuracy: number, maxStreak: number): AppStats {
+  const prev = loadStats();
+  const next: AppStats = {
+    sessions: prev.sessions + 1,
+    lastAccuracy: accuracy,
+    lastSessionAt: Date.now(),
+    bestStreak: Math.max(prev.bestStreak, maxStreak),
+  };
+  saveStats(next);
+  return next;
+}
+
 export function isOnboarded(): boolean {
   if (typeof window === "undefined") return true;
   if (onboardCache !== undefined) return onboardCache;
@@ -104,6 +168,19 @@ export function isOnboarded(): boolean {
 export function setOnboarded(): void {
   localStorage.setItem(ONBOARD_KEY, "1");
   onboardCache = true;
+  bumpStorage();
+}
+
+export function isInstallHintDismissed(): boolean {
+  if (typeof window === "undefined") return true;
+  if (installHintCache !== undefined) return installHintCache;
+  installHintCache = localStorage.getItem(INSTALL_HINT_KEY) === "1";
+  return installHintCache;
+}
+
+export function dismissInstallHint(): void {
+  localStorage.setItem(INSTALL_HINT_KEY, "1");
+  installHintCache = true;
   bumpStorage();
 }
 
@@ -118,4 +195,50 @@ export function resetOnboarding(): void {
   localStorage.removeItem(ONBOARD_KEY);
   onboardCache = false;
   bumpStorage();
+}
+
+export function exportBackup(): ManoBackup {
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: Date.now(),
+    rules: loadRules(),
+    memory: loadMemory(),
+    stats: loadStats(),
+    onboarded: isOnboarded(),
+  };
+}
+
+export function importBackup(data: unknown): { ok: true } | { ok: false; error: string } {
+  if (!data || typeof data !== "object") {
+    return { ok: false, error: "File non valido." };
+  }
+  const b = data as Partial<ManoBackup>;
+  if (b.version !== BACKUP_VERSION) {
+    return { ok: false, error: "Versione backup non supportata." };
+  }
+  if (!b.rules || typeof b.rules !== "object") {
+    return { ok: false, error: "Regole mancanti nel backup." };
+  }
+  if (!b.memory || typeof b.memory !== "object") {
+    return { ok: false, error: "Memoria mancante nel backup." };
+  }
+
+  saveRules({ ...DEFAULT_RULES, ...b.rules });
+  saveMemory(b.memory as Record<string, CardMemory>);
+  saveStats({ ...DEFAULT_STATS, ...(b.stats ?? {}) });
+  if (b.onboarded) setOnboarded();
+  else resetOnboarding();
+  return { ok: true };
+}
+
+export function downloadBackup(): void {
+  const blob = new Blob([JSON.stringify(exportBackup(), null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `mano-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   DEALER_COLS,
+  cellId,
   getAdvice,
   rulesLabel,
   synthesizeHard,
@@ -11,6 +13,7 @@ import {
   type DealerUp,
   type Rank,
 } from "@/engine";
+import { cellDisplayLabel } from "@/learning/sm2";
 import { useIsClient, useMemory, useRules } from "@/lib/client";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
 
@@ -31,7 +34,7 @@ export default function TabellaPage() {
   const rules = useRules();
   const mem = useMemory();
   const [tab, setTab] = useState<Tab>("hard");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     if (tab === "hard") return Array.from({ length: 10 }, (_, i) => 8 + i);
@@ -54,6 +57,33 @@ export default function TabellaPage() {
     return String(row);
   }
 
+  function makeId(row: number, d: DealerUp): string {
+    if (tab === "pair") {
+      const pk = row === 1 ? "A" : String(row);
+      return cellId("pair", pk, d);
+    }
+    return cellId(tab, String(row), d);
+  }
+
+  const selectedAdvice = selectedId
+    ? (() => {
+        const parts = selectedId.split(":");
+        const kind = parts[0] as Tab;
+        const player = parts[1];
+        const dealer = Number(parts[2]) as DealerUp;
+        let cards: Rank[];
+        if (kind === "pair") {
+          const r = (player === "A" ? 1 : Number(player)) as Rank;
+          cards = [r, r];
+        } else if (kind === "soft") {
+          cards = synthesizeSoft(Number(player));
+        } else {
+          cards = synthesizeHard(Number(player));
+        }
+        return getAdvice(cards, dealer, rules);
+      })()
+    : null;
+
   return (
     <PageEnter>
       <header>
@@ -64,11 +94,9 @@ export default function TabellaPage() {
         <p className="mt-2 text-sm text-mist">
           Tocca una cella per il perché. Colori = la tua memoria.
         </p>
-        {rules && (
-          <p className="mt-2 text-[11px] font-semibold tracking-wide text-champagne-bright">
-            {rulesLabel(rules)}
-          </p>
-        )}
+        <p className="mt-2 text-[11px] font-semibold tracking-wide text-champagne-bright">
+          {rulesLabel(rules)}
+        </p>
       </header>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -76,7 +104,10 @@ export default function TabellaPage() {
           <button
             key={t}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => {
+              setTab(t);
+              setSelectedId(null);
+            }}
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
               tab === t
                 ? "bg-champagne text-felt-deep"
@@ -86,12 +117,12 @@ export default function TabellaPage() {
             {t === "hard" ? "Hard" : t === "soft" ? "Soft" : "Coppie"}
           </button>
         ))}
-        <a
+        <Link
           href={`/allenamento/?kind=${tab}`}
           className="ml-auto rounded-full border border-champagne/35 px-3.5 py-1.5 text-xs font-semibold text-champagne-bright no-underline"
         >
           Allena {tab === "hard" ? "Hard" : tab === "soft" ? "Soft" : "Coppie"}
-        </a>
+        </Link>
       </div>
 
       <div className="surface mt-5 overflow-x-auto rounded-2xl">
@@ -120,32 +151,21 @@ export default function TabellaPage() {
                 {DEALER_COLS.map((d) => {
                   const cards = cellCards(row);
                   const advice = getAdvice(cards, d as DealerUp, rules);
-                  const id = `${tab === "pair" ? "pair" : tab}:${
-                    tab === "pair"
-                      ? row === 1
-                        ? "A"
-                        : String(row)
-                      : String(row)
-                  }:${d}`;
+                  const id = makeId(row, d as DealerUp);
                   const m = mem[id];
                   const weak = m?.lastResult === "again";
                   const solid = m && m.repetitions >= 2;
+                  const active = selectedId === id;
                   return (
                     <td key={d} className="p-0.5">
                       <button
                         type="button"
-                        onClick={() =>
-                          setSelected(
-                            advice
-                              ? `${advice.label} — ${advice.reason}${
-                                  advice.fallbackNote
-                                    ? ` (${advice.fallbackNote})`
-                                    : ""
-                                }`
-                              : null,
-                          )
-                        }
+                        onClick={() => setSelectedId(id)}
                         className={`flex h-9 w-full items-center justify-center rounded-md font-semibold ${
+                          active
+                            ? "ring-1 ring-champagne"
+                            : ""
+                        } ${
                           weak
                             ? "bg-danger/25 text-danger"
                             : solid
@@ -176,10 +196,29 @@ export default function TabellaPage() {
         </span>
       </div>
 
-      {selected && (
-        <p className="surface mt-4 rounded-2xl p-4 text-[15px] leading-relaxed text-mist">
-          {selected}
-        </p>
+      {selectedId && selectedAdvice && (
+        <div className="surface mt-4 rounded-2xl p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
+            {cellDisplayLabel(selectedId)}
+          </p>
+          <p className="mt-2 font-display text-3xl text-champagne-bright">
+            {selectedAdvice.label}
+          </p>
+          <p className="mt-2 text-[15px] leading-relaxed text-mist">
+            {selectedAdvice.reason}
+          </p>
+          {selectedAdvice.fallbackNote && (
+            <p className="mt-2 text-sm text-champagne-bright">
+              {selectedAdvice.fallbackNote}
+            </p>
+          )}
+          <Link
+            href={`/allenamento/?cell=${encodeURIComponent(selectedId)}`}
+            className="btn-primary mt-4 no-underline"
+          >
+            Allena questa situazione
+          </Link>
+        </div>
       )}
     </PageEnter>
   );

@@ -9,7 +9,13 @@ import {
   type TableRules,
 } from "@/engine/types";
 import { useIsClient, useRules } from "@/lib/client";
-import { clearMemory, resetOnboarding, saveRules } from "@/lib/storage";
+import {
+  clearMemory,
+  downloadBackup,
+  importBackup,
+  resetOnboarding,
+  saveRules,
+} from "@/lib/storage";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
 import {
   FancySelect,
@@ -22,6 +28,7 @@ export default function RegolePage() {
   const [draft, setDraft] = useState<TableRules | null>(null);
   const [saved, setSaved] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
 
   if (!isClient) return <LoadingMark />;
 
@@ -44,6 +51,30 @@ export default function RegolePage() {
     setDraft(null);
     saveRules(next);
     setSaved(true);
+  }
+
+  async function onImportFile(file: File | null) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (
+        !window.confirm(
+          "Importare questo backup? Sovrascrive regole e progresso attuali.",
+        )
+      ) {
+        return;
+      }
+      const result = importBackup(data);
+      if (!result.ok) {
+        setBackupMsg(result.error);
+        return;
+      }
+      setDraft(null);
+      setBackupMsg("Backup importato.");
+    } catch {
+      setBackupMsg("Impossibile leggere il file.");
+    }
   }
 
   return (
@@ -161,6 +192,41 @@ export default function RegolePage() {
       <button type="button" onClick={persist} className="btn-primary mt-8">
         {saved ? "Salvato ✓" : "Salva regole"}
       </button>
+
+      <div className="surface mt-8 rounded-3xl p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
+          Backup
+        </p>
+        <p className="mt-2 text-sm text-mist">
+          Esporta regole e progresso su un file JSON. Resta sul tuo dispositivo —
+          nessun account.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            downloadBackup();
+            setBackupMsg("File scaricato.");
+          }}
+          className="btn-secondary mt-4"
+        >
+          Esporta backup
+        </button>
+        <label className="btn-secondary mt-3 block cursor-pointer text-center">
+          Importa backup
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              void onImportFile(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {backupMsg && (
+          <p className="mt-3 text-sm text-champagne-bright">{backupMsg}</p>
+        )}
+      </div>
 
       <div className="surface mt-8 rounded-3xl p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">

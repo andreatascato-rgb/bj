@@ -1,55 +1,49 @@
-# MANO — Checkpoint v0.1.0
+# MANO — Checkpoint v0.2.0
 
 **Freeze date:** 2026-07-25  
-**Status:** Product slice locked. Do not casually rewrite flows, visual language, or strategy authority without an explicit product decision.
-
-This file is the “what is decided” record so later work builds *on* v0.1.0 instead of reopening it.
+**Status:** v0.2 usefulness pass on top of v0.1.0. Brand, strategy authority, €0, and static export remain locked.
 
 ---
 
 ## Verdict
 
-| Area | Complete for v1? | Top-tier 2026? |
+| Area | Complete? | Notes |
 | --- | --- | --- |
-| Product scope (Studio + Tavolo + learn) | Yes | Yes for personal coach |
-| Strategy engine + tests | Yes | Yes (lookup tables, no LLM) |
-| Learning (SM-2, mastery, heatmap) | Yes | Solid; not Anki-grade polish |
-| UI craft (felt/champagne, IT) | Yes | Strong craft; not App-Store spectacle |
-| PWA / offline / €0 | Yes | Fit for purpose |
-| Deploy docs | Yes | Ready when GitHub URL arrives |
-
-**Bottom line:** v0.1.0 is a complete, shippable personal coach for the stated promise. It is not a commercial casino-simulator platform — and that is intentional.
-
----
-
-## Locked in (do not reopen without ask)
-
-1. **Brand:** MANO · Italian UI · Fraunces + Manrope · felt `#041611`/`#0c3d2f` + champagne  
-2. **Modes:** Studio (primary learn) · Tavolo (glance consult) · Allena · Tabella · Regole  
-3. **Rules default:** IT/EU ENHC multi-deck · Insurance = No · charts in `src/data/strategy` + `src/engine`  
-4. **Stack:** Next.js App Router static export · Tailwind v4 · Framer Motion · Vitest · localStorage · lightweight SW  
-5. **€0 forever:** no paid APIs, fonts, domains, stores, or backend in this line of product  
-6. **Out of v1:** card counting, cloud sync, AI chat moves, full composition-dependent charts, native stores  
+| Studio coach (focus, mastery/kind, install hint) | Yes | Top weak cells + category % |
+| Allena (keyboard, auto-advance, ?cell=, streak) | Yes | Session stats in localStorage |
+| Tabella → drill cell | Yes | Shared `cellId` + CTA |
+| Tavolo (keyboard ranks, bust UX, card suits) | Yes | Decorative suits only |
+| Backup export/import | Yes | Regole → JSON file |
+| PWA SW | Yes | `mano-v2` |
+| Engine tests | Expanded | Soft H17, surrender, insurance, pairs |
 
 ---
 
-## Verified green at freeze
+## Locked (unchanged from v0.1)
 
-- `npm test` → 13 Vitest tests pass  
-- `npm run build` → static routes `/`, `/tavolo/`, `/allenamento/`, `/tabella/`, `/regole/`  
-
----
-
-## What can come *after* this checkpoint (optional)
-
-Nice-to-haves, not blockers: richer card suits/backs, sound, install prompts polish, more engine edge-case tests, GitHub Actions deploy to Pages/Cloudflare.
+1. Brand MANO · Italian · Fraunces + Manrope · felt/champagne  
+2. Modes: Studio · Tavolo · Allena · Tabella · Regole  
+3. Default IT/EU ENHC · Insurance = No · charts in engine  
+4. Static export · no backend · no paid services  
+5. Out of scope: counting, cloud, AI moves, stores  
 
 ---
 
-## Next step (user-gated)
+## Added in v0.2
 
-1. User provides GitHub repo URL (or creates empty repo)  
-2. Agent: commit all checkpoint work + push  
-3. Optional: Cloudflare Pages / GitHub Pages from `out/`  
+- Focus oggi + mastery Hard/Soft/Coppie  
+- Drill `?cell=` + keyboard + auto-advance on correct  
+- Tabella “Allena questa situazione”  
+- Rank keyboard + bust clear + decorative suits  
+- `mano.stats.v1` + backup JSON  
+- SW cache bump  
 
-Until then, this tree + `docs/` are the source of truth for “what we built.”
+---
+
+## Verify
+
+```bash
+npm test
+npm run lint
+npm run build
+```

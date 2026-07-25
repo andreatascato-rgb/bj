@@ -3,8 +3,20 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { masteryScore } from "@/learning/sm2";
-import { useIsClient, useMemory, useOnboarded, useRules } from "@/lib/client";
+import {
+  countByKind,
+  masteryScore,
+  weakFocusCells,
+} from "@/learning/sm2";
+import {
+  useInstallHintDismissed,
+  useIsClient,
+  useMemory,
+  useOnboarded,
+  useRules,
+  useStats,
+} from "@/lib/client";
+import { dismissInstallHint } from "@/lib/storage";
 import { rulesLabel } from "@/engine";
 import { Onboarding } from "@/components/studio/Onboarding";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
@@ -14,6 +26,8 @@ export default function StudioHome() {
   const onboarded = useOnboarded();
   const memory = useMemory();
   const rules = useRules();
+  const stats = useStats();
+  const installDismissed = useInstallHintDismissed();
   const [forceOnboard, setForceOnboard] = useState(false);
 
   if (!isClient) return <LoadingMark />;
@@ -30,6 +44,10 @@ export default function StudioHome() {
   }
 
   const { percent: mastery, weak, due } = masteryScore(memory);
+  const focus = weakFocusCells(memory, 3);
+  const hard = countByKind(memory, "hard");
+  const soft = countByKind(memory, "soft");
+  const pair = countByKind(memory, "pair");
 
   const nextHref =
     mastery < 15 ? "/allenamento/?kind=hard" : "/allenamento/?mode=warmup";
@@ -49,6 +67,8 @@ export default function StudioHome() {
         : mastery >= 80
           ? "Mantieni la memoria con un warm-up breve prima del casinò."
           : "Allena i punti deboli per salire di mastery.";
+
+  const showInstall = !installDismissed && mastery < 80;
 
   return (
     <PageEnter>
@@ -81,7 +101,9 @@ export default function StudioHome() {
             </p>
           </div>
           <p className="max-w-[11rem] text-right text-sm leading-snug text-mist">
-            {mastery >= 80 ? "Pronto a giocare senza consultare." : nextHint}
+            {mastery >= 80
+              ? "Pronto a giocare senza consultare. Mantieni con warm-up brevi."
+              : nextHint}
           </p>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-felt-card/80">
@@ -92,6 +114,26 @@ export default function StudioHome() {
             transition={{ duration: 0.6, ease: "easeOut" }}
           />
         </div>
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
+          {(
+            [
+              ["Hard", hard, "/allenamento/?kind=hard"],
+              ["Soft", soft, "/allenamento/?kind=soft"],
+              ["Coppie", pair, "/allenamento/?kind=pair"],
+            ] as const
+          ).map(([label, k, href]) => (
+            <Link
+              key={label}
+              href={href}
+              className="rounded-xl border border-ivory/10 bg-felt-deep/40 px-2 py-2.5 no-underline"
+            >
+              <span className="block font-semibold text-mist">{label}</span>
+              <span className="mt-0.5 block font-display text-lg text-champagne-bright">
+                {k.percent}%
+              </span>
+            </Link>
+          ))}
+        </div>
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-mist">
           {weak > 0 && (
             <span className="rounded-full bg-danger/15 px-2.5 py-1 text-danger">
@@ -101,36 +143,47 @@ export default function StudioHome() {
           <span className="rounded-full bg-ivory/8 px-2.5 py-1">
             ~{Math.min(due, 99)} da ripassare
           </span>
+          {stats.sessions > 0 && (
+            <span className="rounded-full bg-ivory/8 px-2.5 py-1">
+              {stats.sessions} sessioni
+              {stats.bestStreak > 1 ? ` · streak ${stats.bestStreak}` : ""}
+            </span>
+          )}
         </div>
       </section>
 
+      {focus.length > 0 && (
+        <section className="mt-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
+            Focus oggi
+          </p>
+          <ul className="mt-3 space-y-2">
+            {focus.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/allenamento/?cell=${encodeURIComponent(c.id)}`}
+                  className="flex items-center justify-between rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 no-underline"
+                >
+                  <span className="font-display text-lg text-ivory">
+                    {c.label}
+                  </span>
+                  <span className="text-xs font-semibold text-danger">
+                    Allena →
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="mt-8 flex flex-col gap-3">
         <Link href={nextHref} className="btn-primary no-underline">
-          {nextLabel}
+          {mastery >= 80 ? "Mantieni · warm-up" : nextLabel}
         </Link>
         <Link href="/allenamento/" className="btn-secondary no-underline">
           Allenamento completo
         </Link>
-        <div className="grid grid-cols-3 gap-2 pt-1">
-          <Link
-            href="/allenamento/?kind=hard"
-            className="rounded-xl border border-ivory/12 bg-felt-deep/35 py-2.5 text-center text-xs font-semibold text-mist no-underline"
-          >
-            Hard
-          </Link>
-          <Link
-            href="/allenamento/?kind=soft"
-            className="rounded-xl border border-ivory/12 bg-felt-deep/35 py-2.5 text-center text-xs font-semibold text-mist no-underline"
-          >
-            Soft
-          </Link>
-          <Link
-            href="/allenamento/?kind=pair"
-            className="rounded-xl border border-ivory/12 bg-felt-deep/35 py-2.5 text-center text-xs font-semibold text-mist no-underline"
-          >
-            Coppie
-          </Link>
-        </div>
         <div className="flex items-center justify-center gap-4 pt-1 text-sm">
           <Link
             href="/tabella/"
@@ -147,6 +200,25 @@ export default function StudioHome() {
           </Link>
         </div>
       </div>
+
+      {showInstall && (
+        <div className="surface mt-8 rounded-2xl p-4">
+          <p className="text-sm leading-relaxed text-mist">
+            Sul telefono: menu del browser →{" "}
+            <span className="font-semibold text-champagne-bright">
+              Aggiungi alla schermata Home
+            </span>
+            . Funziona offline, senza store.
+          </p>
+          <button
+            type="button"
+            onClick={() => dismissInstallHint()}
+            className="mt-3 text-xs font-semibold text-mist underline-offset-4 hover:text-ivory hover:underline"
+          >
+            Nascondi
+          </button>
+        </div>
+      )}
 
       <p className="mt-auto pt-10 text-center text-xs text-mist">
         Educativo · verifica le regole del tavolo · €0

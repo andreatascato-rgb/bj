@@ -1,5 +1,13 @@
-const CACHE = "mano-v1";
-const ASSETS = ["/", "/tavolo/", "/allenamento/", "/tabella/", "/regole/", "/manifest.webmanifest", "/icon.svg"];
+const CACHE = "mano-v2";
+const ASSETS = [
+  "/",
+  "/tavolo/",
+  "/allenamento/",
+  "/tabella/",
+  "/regole/",
+  "/manifest.webmanifest",
+  "/icon.svg",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -21,6 +29,7 @@ self.addEventListener("fetch", (event) => {
     caches.match(event.request).then((cached) => {
       const fetched = fetch(event.request)
         .then((res) => {
+          if (!res || res.status !== 200 || res.type === "opaque") return res;
           const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(event.request, copy));
           return res;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   evaluateHand,
@@ -42,6 +42,18 @@ export default function TavoloPage() {
   }, [rules, dealer, activeCards]);
 
   const insurance = useMemo(() => getInsuranceAdvice(1), []);
+
+  const selectDealer = useCallback((r: Rank) => {
+    setDealer(r);
+    setCards([]);
+    setSplitHands(null);
+    if (r === 1) {
+      setPhase("insurance");
+      setInsuranceSeen(false);
+    } else {
+      setPhase("cards");
+    }
+  }, []);
 
   if (!isClient) return <LoadingMark />;
 
@@ -89,18 +101,6 @@ export default function TavoloPage() {
     }
   }
 
-  function selectDealer(r: Rank) {
-    setDealer(r);
-    setCards([]);
-    setSplitHands(null);
-    if (r === 1) {
-      setPhase("insurance");
-      setInsuranceSeen(false);
-    } else {
-      setPhase("cards");
-    }
-  }
-
   function dismissInsurance() {
     setInsuranceSeen(true);
     setPhase("cards");
@@ -126,6 +126,7 @@ export default function TavoloPage() {
     setPhase("cards");
   }
 
+  const isBust = hand.busted;
   const needsHit =
     advice?.action === "hit" &&
     !hand.busted &&
@@ -134,6 +135,7 @@ export default function TavoloPage() {
   const showHitPicker =
     phase === "result" &&
     !!advice &&
+    !isBust &&
     ((splitHands != null && splitHands[activeSplit].length < 2) ||
       needsHit ||
       (splitHands != null &&
@@ -143,7 +145,9 @@ export default function TavoloPage() {
   const showSplitTrack =
     phase === "result" && advice?.action === "split" && !splitHands;
   const showNewHand =
-    phase === "result" && !!advice && !showHitPicker && !showSplitTrack;
+    phase === "result" &&
+    !!advice &&
+    (isBust || (!showHitPicker && !showSplitTrack));
 
   return (
     <PageEnter>
@@ -152,7 +156,7 @@ export default function TavoloPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-bright">
             Tavolo
           </p>
-          <h1 className="font-display text-3xl text-ivory">Consulto rapido</h1>
+          <h1 className="font-display text-3xl text-ivory">Consulto</h1>
           <Link
             href="/regole/"
             className="mt-1 inline-block text-[10px] font-semibold tracking-wide text-champagne-bright/80 no-underline"
@@ -213,9 +217,7 @@ export default function TavoloPage() {
               type="button"
               onClick={() => {
                 setActiveSplit(i);
-                setPhase(
-                  splitHands[i].length < 2 ? "cards" : "result",
-                );
+                setPhase(splitHands[i].length < 2 ? "cards" : "result");
               }}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
                 activeSplit === i
@@ -251,7 +253,7 @@ export default function TavoloPage() {
               onClick={dismissInsurance}
               className="btn-primary mt-5"
             >
-              Ok, inserisci le mie carte
+              Ok, le mie carte
             </button>
           </motion.div>
         )}
@@ -264,15 +266,21 @@ export default function TavoloPage() {
           >
             <div className="surface mx-auto max-w-sm rounded-3xl px-5 py-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-champagne-bright">
-                Mossa corretta
+                {isBust ? "Risultato" : "Mossa"}
               </p>
-              <p className="mt-2 font-display text-6xl font-semibold text-champagne-bright">
-                {advice.label}
+              <p
+                className={`mt-2 font-display text-6xl font-semibold ${
+                  isBust ? "text-danger" : "text-champagne-bright"
+                }`}
+              >
+                {isBust ? "Sballato" : advice.label}
               </p>
               <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-mist">
-                {advice.reason}
+                {isBust
+                  ? "Hai superato 21. La mano è chiusa."
+                  : advice.reason}
               </p>
-              {advice.fallbackNote && (
+              {!isBust && advice.fallbackNote && (
                 <p className="mt-3 text-sm text-champagne-bright">
                   {advice.fallbackNote}
                 </p>

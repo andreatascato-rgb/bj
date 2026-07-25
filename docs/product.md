@@ -11,15 +11,15 @@ Italian recreational blackjack player. Wants correct basic strategy and enough m
 3. **Prepare** — 5-minute warm-up on weak cells before a session
 4. **Graduate** — see mastery and know when the app can stay home
 
-## Modes (v0.1.0)
+## Modes (v0.2.0)
 
 | Mode | Route | Job |
 | --- | --- | --- |
-| Studio | `/` | Home, mastery, next action, onboarding |
+| Studio | `/` | Home, mastery per kind, Focus oggi, install hint |
 | Tavolo | `/tavolo/` | Live consult: Banco → (assicurazione) → Tu → Mossa |
-| Allena | `/allenamento/` | Drill / warm-up with SM-2 |
-| Tabella | `/tabella/` | Chart + memory heatmap |
-| Regole | `/regole/` | Presets + fine rules + reset progress |
+| Allena | `/allenamento/` | Drill / warm-up / `?cell=` with SM-2 |
+| Tabella | `/tabella/` | Chart + heatmap → allena cella |
+| Regole | `/regole/` | Presets + fine rules + backup JSON + reset |
 
 Phones are often banned at tables — Studio/Allena are the path to autonomy; Tavolo is optional.
 

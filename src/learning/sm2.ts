@@ -92,7 +92,9 @@ export function masteryScore(memories: Record<string, CardMemory>): {
 export function countByKind(
   memories: Record<string, CardMemory>,
   kind: "hard" | "soft" | "pair",
-): { solid: number; weak: number } {
+): { solid: number; weak: number; total: number; percent: number } {
+  const totals = { hard: 100, soft: 80, pair: 100 } as const;
+  const total = totals[kind];
   const prefix = `${kind}:`;
   let solid = 0;
   let weak = 0;
@@ -101,5 +103,45 @@ export function countByKind(
     if (isSolid(mem)) solid += 1;
     if (mem.lastResult === "again") weak += 1;
   }
-  return { solid, weak };
+  return {
+    solid,
+    weak,
+    total,
+    percent: Math.min(100, Math.round((solid / total) * 100)),
+  };
+}
+
+/** Human label for a drill cell id like `hard:16:10` → `16 vs 10`. */
+export function cellDisplayLabel(id: string): string {
+  const [kind, player, dealer] = id.split(":");
+  const d = dealer === "1" ? "A" : dealer;
+  if (kind === "pair") {
+    const p = player === "A" ? "A,A" : `${player},${player}`;
+    return `${p} vs ${d}`;
+  }
+  if (kind === "soft") {
+    const soft = Number(player);
+    const kicker = Number.isFinite(soft) ? soft - 11 : player;
+    return `A${kicker} vs ${d}`;
+  }
+  return `${player} vs ${d}`;
+}
+
+export function weakFocusCells(
+  memories: Record<string, CardMemory>,
+  limit = 3,
+): { id: string; label: string; kind: "hard" | "soft" | "pair" }[] {
+  const weak = Object.entries(memories)
+    .filter(([, m]) => m.lastResult === "again")
+    .sort((a, b) => (a[1].dueAt ?? 0) - (b[1].dueAt ?? 0));
+
+  const out: { id: string; label: string; kind: "hard" | "soft" | "pair" }[] =
+    [];
+  for (const [id] of weak) {
+    const kind = id.split(":")[0];
+    if (kind !== "hard" && kind !== "soft" && kind !== "pair") continue;
+    out.push({ id, label: cellDisplayLabel(id), kind });
+    if (out.length >= limit) break;
+  }
+  return out;
 }
