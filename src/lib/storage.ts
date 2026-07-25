@@ -22,6 +22,8 @@ export interface ManoBackup {
   memory: Record<string, CardMemory>;
   stats: AppStats;
   onboarded: boolean;
+  /** Optional — older backups may omit */
+  sound?: boolean;
 }
 
 const DEFAULT_STATS: AppStats = {
@@ -191,6 +193,17 @@ export function clearMemory(): void {
   bumpStorage();
 }
 
+/** Wipe learning progress + session stats. Rules / sound / onboard stay. */
+export function clearProgress(): void {
+  localStorage.removeItem(MEMORY_KEY);
+  localStorage.removeItem(STATS_KEY);
+  memoryRaw = null;
+  memoryCache = {};
+  statsRaw = null;
+  statsCache = DEFAULT_STATS;
+  bumpStorage();
+}
+
 export function resetOnboarding(): void {
   localStorage.removeItem(ONBOARD_KEY);
   onboardCache = false;
@@ -198,6 +211,10 @@ export function resetOnboarding(): void {
 }
 
 export function exportBackup(): ManoBackup {
+  const sound =
+    typeof window !== "undefined"
+      ? localStorage.getItem("mano.sound.v1") !== "0"
+      : true;
   return {
     version: BACKUP_VERSION,
     exportedAt: Date.now(),
@@ -205,6 +222,7 @@ export function exportBackup(): ManoBackup {
     memory: loadMemory(),
     stats: loadStats(),
     onboarded: isOnboarded(),
+    sound,
   };
 }
 
@@ -226,8 +244,12 @@ export function importBackup(data: unknown): { ok: true } | { ok: false; error: 
   saveRules({ ...DEFAULT_RULES, ...b.rules });
   saveMemory(b.memory as Record<string, CardMemory>);
   saveStats({ ...DEFAULT_STATS, ...(b.stats ?? {}) });
+  if (typeof b.sound === "boolean") {
+    localStorage.setItem("mano.sound.v1", b.sound ? "1" : "0");
+  }
   if (b.onboarded) setOnboarded();
   else resetOnboarding();
+  bumpStorage();
   return { ok: true };
 }
 

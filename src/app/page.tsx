@@ -156,6 +156,9 @@ export default function StudioHome() {
           {stats.sessions > 0 && (
             <span>
               {stats.sessions} sessioni
+              {stats.lastAccuracy != null
+                ? ` · ultima ${stats.lastAccuracy}%`
+                : ""}
               {stats.bestStreak > 1 ? ` · streak ${stats.bestStreak}` : ""}
             </span>
           )}

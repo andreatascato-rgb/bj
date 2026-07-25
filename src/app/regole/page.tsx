@@ -10,7 +10,7 @@ import {
 } from "@/engine/types";
 import { useIsClient, useRules } from "@/lib/client";
 import {
-  clearMemory,
+  clearProgress,
   downloadBackup,
   importBackup,
   resetOnboarding,
@@ -214,11 +214,26 @@ export default function RegolePage() {
 
       <div className="surface mt-8 rounded-3xl p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
+          I tuoi dati
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-mist">
+          Tutto resta <span className="font-semibold text-ivory">solo su questo
+          dispositivo</span> (browser). Niente account e niente cloud. Mastery,
+          heatmap e sessioni si aggiornano a ogni risposta in Allena.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-mist">
+          Cambia telefono o cancella i dati del sito → il progresso sparisce,
+          salvo se hai esportato un backup.
+        </p>
+      </div>
+
+      <div className="surface mt-8 rounded-3xl p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
           Backup
         </p>
         <p className="mt-2 text-sm text-mist">
-          Esporta regole e progresso su un file JSON. Resta sul tuo dispositivo —
-          nessun account.
+          Scarica un file JSON (regole + mastery + stats + suoni). Importalo
+          qui per ripristinare.
         </p>
         <button
           type="button"
@@ -252,7 +267,8 @@ export default function RegolePage() {
           Progresso
         </p>
         <p className="mt-2 text-sm text-mist">
-          Cancella mastery, heatmap e memoria delle celle. Le regole restano.
+          Azzera mastery, heatmap e record di sessione. Le regole del tavolo
+          restano.
         </p>
         <button
           type="button"
@@ -261,7 +277,7 @@ export default function RegolePage() {
               typeof window !== "undefined" &&
               window.confirm("Azzerare tutto il progresso di studio?")
             ) {
-              clearMemory();
+              clearProgress();
               setCleared(true);
             }
           }}
