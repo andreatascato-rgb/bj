@@ -1,0 +1,19 @@
+{
+  "name": "MANO — Coach basic strategy",
+  "short_name": "MANO",
+  "description": "Impara e consulta la basic strategy del blackjack. Europe-first, offline, gratis.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#041611",
+  "theme_color": "#041611",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

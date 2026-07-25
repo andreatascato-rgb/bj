@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MANO
 
-## Getting Started
+Coach personale di **basic strategy** blackjack — Europa-first, offline, **€0**.
 
-First, run the development server:
+**Versione congelata:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) · **v0.1.0**
+
+## Cosa fa
+
+| Sezione | Uso |
+| --- | --- |
+| **Studio** | Mastery, warm-up, prossimo passo |
+| **Tavolo** | Consulto rapido (banco → tue carte → mossa) |
+| **Allena** | Drill / warm-up con ripetizione spaziata |
+| **Tabella** | Chart + heatmap dei tuoi errori |
+| **Regole** | Preset IT/EU o USA + dettagli tavolo |
+
+I progressi restano sul **tuo telefono** (niente account).
+
+## Avvio sul PC
+
+Serve [Node.js](https://nodejs.org/) 20+ (gratis).
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Apri `http://localhost:3000` (hard refresh: Ctrl+Shift+R se non vedi gli aggiornamenti).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Test e build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+npm run build
+```
 
-## Learn More
+## Pubblicare gratis sul telefono
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Cartella `out/` → Cloudflare Pages o GitHub Pages. Guida: [docs/deploy-free.md](docs/deploy-free.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Per te (senza programmare)
 
-## Deploy on Vercel
+1. Onboarding: seconda carta del banco **dopo** i giocatori (Italia) o subito
+2. **Warm-up** o **Allena** per memorizzare
+3. **Tavolo** solo se il casinò consente il telefono
+4. Controlla **Regole** se il tuo tavolo è diverso dal preset
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documenti
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Doc | Contenuto |
+| --- | --- |
+| [docs/CHECKPOINT.md](docs/CHECKPOINT.md) | Cosa è deciso / freeze |
+| [AGENTS.md](AGENTS.md) | Manuale agente |
+| [docs/product.md](docs/product.md) | Prodotto e UX |
+| [docs/strategy.md](docs/strategy.md) | Fonti strategie |
+| [docs/architecture.md](docs/architecture.md) | Mappa codice |
+| [docs/deploy-free.md](docs/deploy-free.md) | Deploy €0 |
+
+Educativo: non garantisce vincite. Verifica sempre le regole del tavolo.

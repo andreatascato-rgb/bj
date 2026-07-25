@@ -1,0 +1,17 @@
+---
+description: MANO blackjack coach — quality, zero-cost, Europe-first
+globs:
+alwaysApply: true
+---
+
+# MANO rules
+
+- Read `AGENTS.md` and `docs/CHECKPOINT.md` before substantial changes.
+- v0.1.0 product/UX/strategy locks stay unless the user explicitly reopens them.
+- Zero paid services/deps. Static export only. No backend in v1.
+- Strategy moves only from `src/engine` + `src/data/strategy` — never invent plays.
+- Default ruleset is EU/IT ENHC, not Vegas peek.
+- UI in Italian. Brand MANO. Fonts Fraunces + Manrope. Felt/champagne craft — no Inter, no purple-indigo slop.
+- Studio = learn; Tavolo = glanceable. Keep first viewports uncluttered.
+- Prefer tests in `src/engine` when changing strategy behavior.
+- Client persistence: `src/lib/storage.ts` + `useSyncExternalStore` hooks in `src/lib/client.ts`.
