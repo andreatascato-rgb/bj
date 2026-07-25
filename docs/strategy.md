@@ -63,8 +63,13 @@ Chart codes `Dh` / `Ds` / `Rh` / `Rs` / `Rp` resolve using current rules. EU 9�
 
 ## Presets in app
 
-- **Italia** → ENHC-oriented EU shoe defaults
-- **USA** → peek-leaning defaults (user must still confirm table)
+| Preset | Note |
+| --- | --- |
+| **Casinò de la Vallée · Saint-Vincent** | ENHC, S17, double any, DAS on (DAS verify at table) |
+| **Casinò italiano / EU tipico** | ENHC, S17, double 9–11 |
+| **USA peek** | Peek, double any |
+
+Always confirm the physical table — house rules can shift by pit/night.
 
 ## House edge note (educational)
 

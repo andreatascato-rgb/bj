@@ -3,8 +3,10 @@
 import { useState, useSyncExternalStore } from "react";
 import {
   PRESETS,
+  matchesPreset,
   type DoubleRule,
   type HoleCardRule,
+  type PresetId,
   type Soft17,
   type TableRules,
 } from "@/engine/types";
@@ -57,7 +59,7 @@ export default function RegolePage() {
     setSaved(true);
   }
 
-  function applyPreset(id: "italia" | "usa") {
+  function applyPreset(id: PresetId) {
     const next = { ...PRESETS[id].rules };
     setDraft(null);
     saveRules(next);
@@ -88,6 +90,8 @@ export default function RegolePage() {
     }
   }
 
+  const presetOrder: PresetId[] = ["saintVincent", "italia", "usa"];
+
   return (
     <PageEnter>
       <header>
@@ -96,43 +100,35 @@ export default function RegolePage() {
         </p>
         <h1 className="mt-2 font-display text-4xl text-ivory">Regole</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-mist">
-          Allinea MANO al tuo casinò. Le mosse dipendono da queste opzioni.
+          Scegli il casinò o regola a mano. Le mosse in Tavolo e Allena
+          seguono queste opzioni.
         </p>
       </header>
 
       <div className="mt-7 space-y-3">
-        <button
-          type="button"
-          onClick={() => applyPreset("italia")}
-          className={`choice-card ${
-            rules.holeCard === "enhc" && rules.double === "nineToEleven"
-              ? "choice-card-active"
-              : ""
-          }`}
-        >
-          <span className="block font-display text-xl text-champagne-bright">
-            {PRESETS.italia.name}
-          </span>
-          <span className="mt-1 block text-sm text-mist">
-            {PRESETS.italia.description}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset("usa")}
-          className={`choice-card ${
-            rules.holeCard === "peek" && rules.double === "any"
-              ? "choice-card-active"
-              : ""
-          }`}
-        >
-          <span className="block font-display text-xl text-ivory">
-            {PRESETS.usa.name}
-          </span>
-          <span className="mt-1 block text-sm text-mist">
-            {PRESETS.usa.description}
-          </span>
-        </button>
+        {presetOrder.map((id) => {
+          const p = PRESETS[id];
+          const active = matchesPreset(rules, id);
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => applyPreset(id)}
+              className={`choice-card ${active ? "choice-card-active" : ""}`}
+            >
+              <span
+                className={`block font-display text-xl ${
+                  active || id === "saintVincent"
+                    ? "text-champagne-bright"
+                    : "text-ivory"
+                }`}
+              >
+                {p.name}
+              </span>
+              <span className="mt-1 block text-sm text-mist">{p.description}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="surface mt-8 space-y-6 overflow-visible rounded-3xl p-5">

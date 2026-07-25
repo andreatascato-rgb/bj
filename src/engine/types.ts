@@ -74,9 +74,24 @@ export const DEFAULT_RULES: TableRules = {
 export const PRESETS = {
   italia: {
     id: "italia",
-    name: "Casinò italiano / EU",
-    description: "ENHC, shoe, raddoppio 9–11, tipico Europa",
+    name: "Casinò italiano / EU tipico",
+    description: "ENHC, shoe, raddoppio solo 9–11 — profilo Europa generico",
     rules: DEFAULT_RULES,
+  },
+  saintVincent: {
+    id: "saintVincent",
+    name: "Casinò de la Vallée · Saint-Vincent",
+    description:
+      "ENHC · banco sta su 17 · raddoppio su qualsiasi totale · DAS tipico (verifica al tavolo)",
+    rules: {
+      decks: 6 as const,
+      soft17: "S17" as const,
+      holeCard: "enhc" as const,
+      double: "any" as const,
+      das: true,
+      surrender: false,
+      resplitAces: false,
+    },
   },
   usa: {
     id: "usa",
@@ -93,3 +108,18 @@ export const PRESETS = {
     },
   },
 } as const;
+
+export type PresetId = keyof typeof PRESETS;
+
+export function matchesPreset(rules: TableRules, id: PresetId): boolean {
+  const p = PRESETS[id].rules;
+  return (
+    rules.decks === p.decks &&
+    rules.soft17 === p.soft17 &&
+    rules.holeCard === p.holeCard &&
+    rules.double === p.double &&
+    rules.das === p.das &&
+    rules.surrender === p.surrender &&
+    rules.resplitAces === p.resplitAces
+  );
+}

@@ -10,13 +10,15 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [hole, setHole] = useState<HoleCardRule>("enhc");
   const reduce = useReducedMotion();
 
-  function finish(preset: "italia" | "usa" | "custom") {
+  function finish(preset: "saintVincent" | "usa" | "custom") {
     let rules: TableRules =
-      preset === "usa" ? { ...PRESETS.usa.rules } : { ...PRESETS.italia.rules };
+      preset === "usa"
+        ? { ...PRESETS.usa.rules }
+        : { ...PRESETS.saintVincent.rules };
     if (preset === "custom") {
-      rules = { ...PRESETS.italia.rules, holeCard: hole };
+      rules = { ...PRESETS.saintVincent.rules, holeCard: hole };
     }
-    if (preset === "italia") rules.holeCard = "enhc";
+    if (preset === "saintVincent") rules.holeCard = "enhc";
     if (preset === "usa") rules.holeCard = "peek";
     saveRules(rules);
     setOnboarded();
@@ -141,16 +143,18 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 Preset pronto
               </p>
               <p className="mt-2 font-display text-2xl text-ivory">
-                {hole === "peek" ? PRESETS.usa.name : PRESETS.italia.name}
+                {hole === "peek" ? PRESETS.usa.name : PRESETS.saintVincent.name}
               </p>
               <p className="mt-2 text-sm text-mist">
-                {hole === "peek" ? PRESETS.usa.description : PRESETS.italia.description}
+                {hole === "peek"
+                  ? PRESETS.usa.description
+                  : PRESETS.saintVincent.description}
               </p>
             </div>
 
             <button
               type="button"
-              onClick={() => finish(hole === "peek" ? "usa" : "italia")}
+              onClick={() => finish(hole === "peek" ? "usa" : "saintVincent")}
               className="btn-primary mt-6"
             >
               Entra in Studio
