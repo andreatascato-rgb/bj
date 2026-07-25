@@ -80,6 +80,7 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
       <div className="grid grid-cols-5 gap-2">
         {RANKS.map((r) => {
           const active = value === r.value;
+          const isTen = r.value === 10;
           return (
             <motion.button
               key={r.label}
@@ -89,7 +90,9 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
                 haptic();
                 onSelect(r.value);
               }}
-              className={`min-h-14 rounded-xl border font-display text-xl font-semibold transition ${
+              className={`flex min-h-14 items-center justify-center rounded-2xl border font-display font-semibold tabular-nums transition ${
+                isTen ? "text-[1.05rem] tracking-tight" : "text-xl"
+              } ${
                 active
                   ? "border-champagne bg-champagne text-felt-deep shadow-[0_8px_24px_rgba(224,184,106,0.35)]"
                   : "border-ivory/15 bg-felt-deep/50 text-ivory"
@@ -105,6 +108,36 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
           Tasti A · 2–9 · 0/T
         </p>
       )}
+    </div>
+  );
+}
+
+function CardCorner({
+  label,
+  suit,
+  red,
+}: {
+  label: string;
+  suit: string;
+  red: boolean;
+}) {
+  const isTen = label === "10";
+  return (
+    <div
+      className={`flex w-[1.15rem] flex-col items-center leading-none ${
+        red ? "text-[#b42318]" : "text-[#1a1a1a]"
+      }`}
+    >
+      <span
+        className={`font-display font-semibold tracking-tight ${
+          isTen ? "text-[0.95rem]" : "text-[1.15rem]"
+        }`}
+      >
+        {label}
+      </span>
+      <span className="mt-[1px] text-[0.72rem] leading-none" aria-hidden>
+        {suit}
+      </span>
     </div>
   );
 }
@@ -126,43 +159,39 @@ export function PlayingCard({
 
   const inner = faceDown ? (
     <div
-      className="flex h-28 w-[4.5rem] items-center justify-center rounded-2xl border border-champagne/25 bg-[linear-gradient(145deg,#145a44_0%,#041611_55%,#0c3d2f_100%)] shadow-xl"
+      className="flex h-[7.25rem] w-[5.1rem] items-center justify-center rounded-[0.85rem] border border-champagne/25 bg-[linear-gradient(145deg,#145a44_0%,#041611_55%,#0c3d2f_100%)] shadow-xl"
       aria-hidden
     >
-      <div className="h-16 w-11 rounded-lg border border-champagne/35" />
+      <div className="h-[4.25rem] w-[2.85rem] rounded-md border border-champagne/35" />
     </div>
   ) : rank == null ? (
-    <div className="flex h-28 w-[4.5rem] items-center justify-center rounded-2xl border border-dashed border-ivory/25 bg-felt-deep/35 text-mist">
+    <div className="flex h-[7.25rem] w-[5.1rem] items-center justify-center rounded-[0.85rem] border border-dashed border-ivory/25 bg-felt-deep/35 text-mist">
       <span className="font-display text-2xl opacity-50">?</span>
     </div>
   ) : (
-    <div className="relative flex h-28 w-[4.5rem] flex-col justify-between rounded-2xl border border-black/10 bg-gradient-to-br from-[#fffaf2] to-[#efe2cf] p-2.5 text-felt-deep shadow-[0_14px_30px_rgba(0,0,0,0.35)]">
-      <div className="flex flex-col leading-none">
-        <span className="font-display text-xl font-semibold">{label}</span>
-        <span
-          className={`mt-0.5 text-sm ${red ? "text-[#9b2c2c]" : "text-felt-deep"}`}
-          aria-hidden
-        >
-          {suit}
-        </span>
+    <div
+      className="relative h-[7.25rem] w-[5.1rem] overflow-hidden rounded-[0.85rem] border border-black/12 bg-gradient-to-br from-[#fffdf8] via-[#f7efe3] to-[#ebddc8] text-[#1a1a1a] shadow-[0_12px_28px_rgba(0,0,0,0.38)]"
+      aria-label={`${label} ${suit}`}
+    >
+      {/* Top-left index — classic corner stack */}
+      <div className="absolute top-[0.35rem] left-[0.28rem] z-10">
+        <CardCorner label={label} suit={suit!} red={red} />
       </div>
+
+      {/* Bottom-right index — true 180° mirror of the same corner */}
+      <div className="absolute right-[0.28rem] bottom-[0.35rem] z-10 rotate-180">
+        <CardCorner label={label} suit={suit!} red={red} />
+      </div>
+
+      {/* Single centered pip watermark */}
       <span
-        className={`absolute inset-0 flex items-center justify-center font-display text-4xl opacity-[0.12] ${
-          red ? "text-[#9b2c2c]" : ""
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center text-[2.65rem] leading-none opacity-[0.18] ${
+          red ? "text-[#b42318]" : "text-[#1a1a1a]"
         }`}
         aria-hidden
       >
         {suit}
       </span>
-      <div className="flex rotate-180 flex-col leading-none self-end">
-        <span className="font-display text-xl font-semibold">{label}</span>
-        <span
-          className={`mt-0.5 text-sm ${red ? "text-[#9b2c2c]" : "text-felt-deep"}`}
-          aria-hidden
-        >
-          {suit}
-        </span>
-      </div>
     </div>
   );
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ACTION_LABELS,
@@ -26,6 +26,7 @@ import {
   upsertMemory,
 } from "@/lib/storage";
 import { PlayingCard } from "@/components/ui/RankPicker";
+import { SegmentedControl } from "@/components/ui/FancySelect";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
 
 const CHOICES: Action[] = ["hit", "stand", "double", "split", "surrender"];
@@ -369,31 +370,8 @@ function DrillInner() {
           />
         </div>
         {!warmup && !focused && (
-          <div className="mt-4 flex gap-2">
-            {(
-              [
-                ["", "Tutti"],
-                ["hard", "Hard"],
-                ["soft", "Soft"],
-                ["pair", "Coppie"],
-              ] as const
-            ).map(([k, label]) => {
-              const active = (kindFilter ?? "") === k;
-              const href = k ? `/allenamento/?kind=${k}` : "/allenamento/";
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold no-underline ${
-                    active
-                      ? "bg-champagne text-felt-deep"
-                      : "bg-felt-card/50 text-mist"
-                  }`}
-                >
-                  {label}
-                </a>
-              );
-            })}
+          <div className="mt-4">
+            <KindFilter value={kindFilter ?? ""} />
           </div>
         )}
       </header>
@@ -423,14 +401,17 @@ function DrillInner() {
       <p className="mt-7 text-center text-sm font-medium text-mist">
         Cosa fai in questa mano?
       </p>
-      <p className="mt-1 text-center text-[10px] text-mist/70">
-        Tasti 1–5 · H S D P R
+      <p className="mt-1 text-center text-[10px] tracking-wide text-mist/55">
+        1–5 · H S D P R
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         {visibleChoices.map((c, i) => {
           const isRight = revealed && c === advice.action;
           const isWrong = revealed && c === picked && !ok;
+          const alone =
+            visibleChoices.length % 2 === 1 &&
+            i === visibleChoices.length - 1;
           return (
             <motion.button
               key={c}
@@ -438,7 +419,9 @@ function DrillInner() {
               whileTap={{ scale: 0.97 }}
               disabled={revealed}
               onClick={() => answer(c)}
-              className={`min-h-14 rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+              className={`relative flex min-h-[3.5rem] items-center justify-center rounded-2xl border px-3 py-3.5 text-[15px] font-semibold transition ${
+                alone ? "col-span-2" : ""
+              } ${
                 isRight
                   ? "border-ok bg-ok/20 text-ok"
                   : isWrong
@@ -446,7 +429,9 @@ function DrillInner() {
                     : "border-ivory/15 bg-felt-deep/45 text-ivory"
               }`}
             >
-              <span className="mr-1.5 text-[10px] opacity-50">{i + 1}</span>
+              <span className="absolute top-2 left-2.5 text-[10px] font-semibold tabular-nums text-mist/45">
+                {i + 1}
+              </span>
               {ACTION_LABELS[c]}
             </motion.button>
           );
@@ -497,6 +482,25 @@ function Feedback({
         </button>
       )}
     </motion.div>
+  );
+}
+
+function KindFilter({ value }: { value: string }) {
+  const router = useRouter();
+  return (
+    <SegmentedControl
+      ariaLabel="Tipo di carte"
+      value={value}
+      onChange={(v) => {
+        router.push(v ? `/allenamento/?kind=${v}` : "/allenamento/");
+      }}
+      options={[
+        { value: "", label: "Tutti" },
+        { value: "hard", label: "Hard" },
+        { value: "soft", label: "Soft" },
+        { value: "pair", label: "Coppie" },
+      ]}
+    />
   );
 }
 

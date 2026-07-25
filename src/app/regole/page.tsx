@@ -295,15 +295,29 @@ function Toggle({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between rounded-xl border border-ivory/12 bg-felt-deep/35 px-4 py-3"
+      className="flex w-full items-center justify-between rounded-xl border border-ivory/12 bg-felt-deep/35 px-4 py-3.5"
     >
-      <span className="text-sm text-ivory">{label}</span>
-      <span
-        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-          checked ? "bg-ok/20 text-ok" : "bg-ivory/10 text-mist"
-        }`}
-      >
-        {checked ? "On" : "Off"}
+      <span className="text-sm font-medium text-ivory">{label}</span>
+      <span className="flex items-center gap-2.5">
+        <span
+          className={`text-xs font-semibold ${
+            checked ? "text-champagne-bright" : "text-mist"
+          }`}
+        >
+          {checked ? "Attivo" : "Spento"}
+        </span>
+        <span
+          className={`relative h-7 w-12 rounded-full transition ${
+            checked ? "bg-champagne" : "bg-ivory/15"
+          }`}
+          aria-hidden
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-felt-deep shadow transition ${
+              checked ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </span>
       </span>
     </button>
   );

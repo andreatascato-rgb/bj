@@ -114,7 +114,7 @@ export default function StudioHome() {
             transition={{ duration: 0.6, ease: "easeOut" }}
           />
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
+        <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
           {(
             [
               ["Hard", hard, "/allenamento/?kind=hard"],
@@ -125,26 +125,28 @@ export default function StudioHome() {
             <Link
               key={label}
               href={href}
-              className="rounded-xl border border-ivory/10 bg-felt-deep/40 px-2 py-2.5 no-underline"
+              className="rounded-xl border border-ivory/10 bg-felt-deep/40 px-2.5 py-2.5 no-underline"
             >
               <span className="block font-semibold text-mist">{label}</span>
               <span className="mt-0.5 block font-display text-lg text-champagne-bright">
                 {k.percent}%
               </span>
+              <span className="mt-2 block h-1 overflow-hidden rounded-full bg-felt-card/80">
+                <span
+                  className="block h-full rounded-full bg-champagne/80"
+                  style={{ width: `${k.percent}%` }}
+                />
+              </span>
             </Link>
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap gap-3 text-xs text-mist">
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-mist">
           {weak > 0 && (
-            <span className="rounded-full bg-danger/15 px-2.5 py-1 text-danger">
-              {weak} deboli
-            </span>
+            <span className="text-danger">{weak} deboli</span>
           )}
-          <span className="rounded-full bg-ivory/8 px-2.5 py-1">
-            ~{Math.min(due, 99)} da ripassare
-          </span>
+          <span>~{Math.min(due, 99)} da ripassare</span>
           {stats.sessions > 0 && (
-            <span className="rounded-full bg-ivory/8 px-2.5 py-1">
+            <span>
               {stats.sessions} sessioni
               {stats.bestStreak > 1 ? ` · streak ${stats.bestStreak}` : ""}
             </span>

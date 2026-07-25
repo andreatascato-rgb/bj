@@ -134,7 +134,7 @@ export function FancySelect({
   );
 }
 
-/** Two-option pill control — prefer over select when only 2 choices */
+/** Pill segmented control — 2–4 options (equal columns). */
 export function SegmentedControl({
   value,
   onChange,
@@ -146,11 +146,18 @@ export function SegmentedControl({
   options: { value: string; label: string }[];
   ariaLabel: string;
 }) {
+  const cols =
+    options.length <= 2
+      ? "grid-cols-2"
+      : options.length === 3
+        ? "grid-cols-3"
+        : "grid-cols-4";
+
   return (
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="grid grid-cols-2 gap-2 rounded-xl border border-ivory/12 bg-felt-deep/40 p-1.5"
+      className={`grid ${cols} gap-1.5 rounded-xl border border-ivory/12 bg-felt-deep/40 p-1.5`}
     >
       {options.map((o) => {
         const active = o.value === value;
@@ -161,10 +168,10 @@ export function SegmentedControl({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
+            className={`rounded-lg px-2 py-2.5 text-center text-sm font-semibold transition ${
               active
                 ? "bg-champagne text-felt-deep shadow-[0_6px_16px_rgba(224,184,106,0.28)]"
-                : "text-mist"
+                : "text-mist hover:text-ivory"
             }`}
           >
             {o.label}

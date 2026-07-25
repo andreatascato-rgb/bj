@@ -16,6 +16,7 @@ import {
 import { cellDisplayLabel } from "@/learning/sm2";
 import { useIsClient, useMemory, useRules } from "@/lib/client";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
+import { SegmentedControl } from "@/components/ui/FancySelect";
 
 type Tab = "hard" | "soft" | "pair";
 
@@ -99,29 +100,27 @@ export default function TabellaPage() {
         </p>
       </header>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        {(["hard", "soft", "pair"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => {
-              setTab(t);
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <SegmentedControl
+            ariaLabel="Tipo tabella"
+            value={tab}
+            onChange={(v) => {
+              setTab(v as Tab);
               setSelectedId(null);
             }}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
-              tab === t
-                ? "bg-champagne text-felt-deep"
-                : "bg-felt-card/60 text-mist"
-            }`}
-          >
-            {t === "hard" ? "Hard" : t === "soft" ? "Soft" : "Coppie"}
-          </button>
-        ))}
+            options={[
+              { value: "hard", label: "Hard" },
+              { value: "soft", label: "Soft" },
+              { value: "pair", label: "Coppie" },
+            ]}
+          />
+        </div>
         <Link
           href={`/allenamento/?kind=${tab}`}
-          className="ml-auto rounded-full border border-champagne/35 px-3.5 py-1.5 text-xs font-semibold text-champagne-bright no-underline"
+          className="shrink-0 rounded-xl border border-champagne/35 px-3.5 py-2.5 text-xs font-semibold text-champagne-bright no-underline"
         >
-          Allena {tab === "hard" ? "Hard" : tab === "soft" ? "Soft" : "Coppie"}
+          Allena
         </Link>
       </div>
 
@@ -129,7 +128,7 @@ export default function TabellaPage() {
         <table className="w-full min-w-[320px] border-collapse text-center text-[11px]">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-[#062419]/90 p-2.5 text-mist backdrop-blur-sm">
+              <th className="sticky left-0 z-10 bg-felt-deep/95 p-2.5 text-mist backdrop-blur-sm">
                  
               </th>
               {DEALER_COLS.map((d) => (
@@ -145,7 +144,7 @@ export default function TabellaPage() {
           <tbody>
             {rows.map((row) => (
               <tr key={row} className="border-t border-felt-line/40">
-                <th className="sticky left-0 z-10 bg-[#062419]/80 p-2 text-left font-semibold text-mist backdrop-blur-sm">
+                <th className="sticky left-0 z-10 bg-felt-deep/95 p-2 text-left font-semibold text-mist backdrop-blur-sm">
                   {rowLabel(row)}
                 </th>
                 {DEALER_COLS.map((d) => {
@@ -161,16 +160,14 @@ export default function TabellaPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedId(id)}
-                        className={`flex h-9 w-full items-center justify-center rounded-md font-semibold ${
+                        className={`flex h-10 w-full items-center justify-center rounded-lg font-semibold transition ${
                           active
-                            ? "ring-1 ring-champagne"
-                            : ""
-                        } ${
-                          weak
-                            ? "bg-danger/25 text-danger"
-                            : solid
-                              ? "bg-ok/20 text-ok"
-                              : "bg-felt-deep/35 text-ivory"
+                            ? "bg-champagne text-felt-deep shadow-[0_0_0_1px_rgba(224,184,106,0.5)]"
+                            : weak
+                              ? "bg-danger/25 text-danger"
+                              : solid
+                                ? "bg-ok/20 text-ok"
+                                : "bg-felt-deep/45 text-ivory hover:bg-felt-deep/70"
                         }`}
                       >
                         {advice ? ACTION_SHORT[advice.action] : "—"}
