@@ -143,14 +143,14 @@ export function UpdateToast() {
           exit={{ opacity: 0, y: 12 }}
           className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-lg justify-center px-5"
         >
-          <div className="surface flex w-full items-center gap-3 rounded-2xl px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+          <div className="surface flex w-full items-center gap-3 rounded-2xl px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.45)]" role="status" aria-live="polite">
             <p className="min-w-0 flex-1 text-sm text-mist">
               Nuova versione di MANO pronta.
             </p>
             <button
               type="button"
               onClick={apply}
-              className="shrink-0 rounded-xl bg-champagne px-3.5 py-2 text-xs font-semibold text-felt-deep"
+              className="min-h-11 shrink-0 rounded-xl bg-champagne px-3.5 py-2 text-sm font-semibold text-felt-deep"
             >
               Aggiorna
             </button>

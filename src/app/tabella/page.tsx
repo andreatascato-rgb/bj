@@ -13,9 +13,10 @@ import {
   type DealerUp,
   type Rank,
 } from "@/engine";
-import { cellDisplayLabel } from "@/learning/sm2";
+import { cellDisplayLabel, isSolid } from "@/learning/sm2";
 import { useIsClient, useMemory, useRules } from "@/lib/client";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { SegmentedControl } from "@/components/ui/FancySelect";
 
 type Tab = "hard" | "soft" | "pair";
@@ -87,20 +88,14 @@ export default function TabellaPage() {
 
   return (
     <PageEnter>
-      <header>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-bright">
-          Riferimento
-        </p>
-        <h1 className="mt-2 font-display text-4xl text-ivory">Tabella</h1>
-        <p className="mt-2 text-sm text-mist">
-          Tocca una cella per il perché. Colori = la tua memoria.
-        </p>
-        <p className="mt-2 text-[11px] font-semibold tracking-wide text-champagne-bright">
-          {rulesLabel(rules)}
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Riferimento"
+        title="Tabella"
+        subtitle="Tocca una cella per il perché. Colori = la tua memoria."
+        rulesLabel={rulesLabel(rules)}
+      />
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-5 flex items-stretch gap-2.5">
         <div className="min-w-0 flex-1">
           <SegmentedControl
             ariaLabel="Tipo tabella"
@@ -118,7 +113,7 @@ export default function TabellaPage() {
         </div>
         <Link
           href={`/allenamento/?kind=${tab}`}
-          className="shrink-0 rounded-xl border border-champagne/35 px-3.5 py-2.5 text-xs font-semibold text-champagne-bright no-underline"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl border border-champagne/40 bg-felt-deep/40 px-3.5 text-xs font-semibold text-champagne-bright no-underline"
         >
           Allena
         </Link>
@@ -153,14 +148,19 @@ export default function TabellaPage() {
                   const id = makeId(row, d as DealerUp);
                   const m = mem[id];
                   const weak = m?.lastResult === "again";
-                  const solid = m && m.repetitions >= 2;
+                  const solid = m ? isSolid(m) : false;
                   const active = selectedId === id;
+                  const dealerLabel = d === 1 ? "A" : String(d);
+                  const aria = `${rowLabel(row)} vs ${dealerLabel}, ${
+                    advice ? advice.label : "—"
+                  }`;
                   return (
                     <td key={d} className="p-0.5">
                       <button
                         type="button"
+                        aria-label={aria}
                         onClick={() => setSelectedId(id)}
-                        className={`flex h-10 w-full items-center justify-center rounded-lg font-semibold transition ${
+                        className={`flex min-h-11 w-full items-center justify-center rounded-lg text-sm font-semibold transition ${
                           active
                             ? "bg-champagne text-felt-deep shadow-[0_0_0_1px_rgba(224,184,106,0.5)]"
                             : weak

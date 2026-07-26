@@ -12,4 +12,4 @@ export {
   rulesLabel,
 } from "./advise";
 export type * from "./types";
-export { DEFAULT_RULES, PRESETS } from "./types";
+export { DEFAULT_RULES, PRESETS, PRESET_ORDER, findMatchingPreset, matchesPreset } from "./types";

@@ -111,6 +111,8 @@ export const PRESETS = {
 
 export type PresetId = keyof typeof PRESETS;
 
+export const PRESET_ORDER: PresetId[] = ["saintVincent", "italia", "usa"];
+
 export function matchesPreset(rules: TableRules, id: PresetId): boolean {
   const p = PRESETS[id].rules;
   return (
@@ -122,4 +124,12 @@ export function matchesPreset(rules: TableRules, id: PresetId): boolean {
     rules.surrender === p.surrender &&
     rules.resplitAces === p.resplitAces
   );
+}
+
+/** First matching named preset, or null if custom. */
+export function findMatchingPreset(rules: TableRules): PresetId | null {
+  for (const id of PRESET_ORDER) {
+    if (matchesPreset(rules, id)) return id;
+  }
+  return null;
 }

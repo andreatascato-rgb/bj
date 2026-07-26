@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   countByKind,
   masteryScore,
@@ -25,6 +25,7 @@ import {
 import { rulesLabel } from "@/engine";
 import { Onboarding } from "@/components/studio/Onboarding";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
+import { RulesChip } from "@/components/ui/PageHeader";
 
 export default function StudioHome() {
   const isClient = useIsClient();
@@ -34,6 +35,7 @@ export default function StudioHome() {
   const stats = useStats();
   const installDismissed = useInstallHintDismissed();
   const canInstall = useCanInstall();
+  const reduceMotion = useReducedMotion();
   const [forceOnboard, setForceOnboard] = useState(false);
   const [installBusy, setInstallBusy] = useState(false);
 
@@ -55,31 +57,25 @@ export default function StudioHome() {
   const hard = countByKind(memory, "hard");
   const soft = countByKind(memory, "soft");
   const pair = countByKind(memory, "pair");
+  const ready = mastery >= 80;
 
   const nextHref =
     mastery < 15 ? "/allenamento/?kind=hard" : "/allenamento/?mode=warmup";
-  const nextLabel =
-    mastery < 15
+  const nextLabel = ready
+    ? "Mantieni · warm-up"
+    : mastery < 15
       ? "Inizia dagli Hard"
       : weak > 0
         ? `Warm-up · ${weak} da ripassare`
         : due > 40
           ? "Warm-up · celle in scadenza"
           : "Warm-up 5 minuti";
-  const nextHint =
-    mastery < 15
-      ? "Parti dai totali hard: sono i più frequenti al tavolo."
-      : weak > 0
-        ? "Ripassa le celle che hai sbagliato di recente."
-        : mastery >= 80
-          ? "Mantieni la memoria con un warm-up breve prima del casinò."
-          : "Allena i punti deboli per salire di mastery.";
 
-  const showInstall =
-    !installDismissed && mastery < 80 && !isStandalone();
+  const showInstall = !installDismissed && !isStandalone();
 
   return (
     <PageEnter>
+      {/* First viewport: brand + mastery + one CTA */}
       <header className="pt-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-bright">
           Studio
@@ -88,17 +84,16 @@ export default function StudioHome() {
           MANO
         </h1>
         <p className="mt-4 max-w-sm text-lg leading-relaxed text-mist">
-          Impara le mosse giuste. Poi lascia l&apos;app a casa.
+          {ready
+            ? "Pronto: puoi lasciare l’app a casa. Mantieni con warm-up brevi."
+            : "Impara le mosse giuste. Poi lascia l’app a casa."}
         </p>
-        <Link
-          href="/regole/"
-          className="mt-4 inline-flex rounded-full border border-champagne/30 bg-felt-deep/40 px-3 py-1 text-[11px] font-semibold tracking-wide text-champagne-bright no-underline"
-        >
-          {rulesLabel(rules)}
-        </Link>
+        <div className="mt-4">
+          <RulesChip label={rulesLabel(rules)} />
+        </div>
       </header>
 
-      <section className="surface mt-8 rounded-3xl p-5">
+      <section className="mt-8">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
@@ -108,20 +103,32 @@ export default function StudioHome() {
               {mastery}%
             </p>
           </div>
-          <p className="max-w-[11rem] text-right text-sm leading-snug text-mist">
-            {mastery >= 80
-              ? "Pronto a giocare senza consultare. Mantieni con warm-up brevi."
-              : nextHint}
-          </p>
+          {ready && (
+            <p className="rounded-full border border-ok/35 bg-ok/10 px-3 py-1 text-xs font-semibold text-ok">
+              Pronto
+            </p>
+          )}
         </div>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-felt-card/80">
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-felt-card/80">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-champagne to-champagne-bright"
-            initial={{ width: 0 }}
+            initial={reduceMotion ? false : { width: 0 }}
             animate={{ width: `${mastery}%` }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={
+              reduceMotion ? { duration: 0 } : { duration: 0.6, ease: "easeOut" }
+            }
           />
         </div>
+        <Link href={nextHref} className="btn-primary mt-6 no-underline">
+          {nextLabel}
+        </Link>
+      </section>
+
+      {/* Below fold */}
+      <section className="surface mt-10 rounded-3xl p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-champagne-bright">
+          Per tipo
+        </p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
           {(
             [
@@ -175,7 +182,7 @@ export default function StudioHome() {
               <li key={c.id}>
                 <Link
                   href={`/allenamento/?cell=${encodeURIComponent(c.id)}`}
-                  className="flex items-center justify-between rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 no-underline"
+                  className="flex min-h-11 items-center justify-between rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3 no-underline"
                 >
                   <span className="font-display text-lg text-ivory">
                     {c.label}
@@ -190,10 +197,7 @@ export default function StudioHome() {
         </section>
       )}
 
-      <div className="mt-8 flex flex-col gap-3">
-        <Link href={nextHref} className="btn-primary no-underline">
-          {mastery >= 80 ? "Mantieni · warm-up" : nextLabel}
-        </Link>
+      <div className="mt-6 flex flex-col gap-3">
         <Link href="/allenamento/" className="btn-secondary no-underline">
           Allenamento completo
         </Link>
@@ -232,7 +236,7 @@ export default function StudioHome() {
                   setInstallBusy(false);
                   if (outcome === "accepted") dismissInstallHint();
                 }}
-                className="rounded-xl bg-champagne px-3.5 py-2 text-xs font-semibold text-felt-deep disabled:opacity-60"
+                className="min-h-11 rounded-xl bg-champagne px-4 py-2.5 text-sm font-semibold text-felt-deep disabled:opacity-60"
               >
                 Installa
               </button>
@@ -240,7 +244,7 @@ export default function StudioHome() {
             <button
               type="button"
               onClick={() => dismissInstallHint()}
-              className="text-xs font-semibold text-mist underline-offset-4 hover:text-ivory hover:underline"
+              className="min-h-11 px-2 text-sm font-semibold text-mist underline-offset-4 hover:text-ivory hover:underline"
             >
               Nascondi
             </button>

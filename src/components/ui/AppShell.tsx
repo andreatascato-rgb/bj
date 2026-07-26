@@ -1,24 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AppNav } from "@/components/ui/AppNav";
-import { isOnboarded } from "@/lib/storage";
+import { isOnboarded, subscribeStorage } from "@/lib/storage";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const sync = () => setOnboarded(isOnboarded());
     sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener("mano:onboarded", sync);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("mano:onboarded", sync);
-    };
+    return subscribeStorage(sync);
   }, []);
 
+  useEffect(() => {
+    if (onboarded !== false) return;
+    if (pathname === "/" || pathname === "") return;
+    router.replace("/");
+  }, [onboarded, pathname, router]);
+
   const showNav = onboarded === true;
+  const gating =
+    onboarded === false && pathname !== "/" && pathname !== "";
 
   return (
     <>
@@ -27,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           showNav ? "pb-28" : "pb-[max(2.5rem,env(safe-area-inset-bottom))]"
         }`}
       >
-        {children}
+        {gating ? null : children}
       </div>
       {showNav ? <AppNav /> : null}
     </>

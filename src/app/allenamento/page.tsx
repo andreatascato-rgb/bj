@@ -18,7 +18,7 @@ import {
   masteryScore,
   review,
 } from "@/learning/sm2";
-import { useIsClient, useRules } from "@/lib/client";
+import { useAutoAdvance, useIsClient, useRules } from "@/lib/client";
 import {
   getOrCreateMemory,
   loadMemory,
@@ -26,11 +26,15 @@ import {
   upsertMemory,
 } from "@/lib/storage";
 import { feedback } from "@/lib/feedback";
-import { PlayingCard } from "@/components/ui/RankPicker";
 import { SegmentedControl } from "@/components/ui/FancySelect";
 import { LoadingMark, PageEnter } from "@/components/ui/PageChrome";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { HandStage } from "@/components/ui/HandStage";
 
 const CHOICES: Action[] = ["hit", "stand", "double", "split", "surrender"];
+
+/** Enough to read “Corretto” + one-line reason before the next hand. */
+const AUTO_ADVANCE_MS = 1600;
 
 const KEY_TO_ACTION: Record<string, Action> = {
   "1": "hit",
@@ -59,8 +63,9 @@ function buildQueue(
       cells.find((c) => c.id === cellId) ??
       allDrillCells().find((c) => c.id === cellId);
     if (target) {
+      const reps = 4;
       return {
-        queue: [target],
+        queue: Array.from({ length: reps }, () => target),
         masteryStart,
         focused: true as const,
       };
@@ -69,21 +74,43 @@ function buildQueue(
 
   const due = cells.filter((c) => isDue(mem[c.id]));
   const weak = cells.filter((c) => mem[c.id]?.lastResult === "again");
-  const pool = warmup
-    ? weak.length
-      ? weak
-      : due.length
-        ? due
-        : cells
-    : due.length
-      ? due
-      : cells;
+  const learning = cells.filter((c) => {
+    const m = mem[c.id];
+    return m && m.repetitions > 0 && m.lastResult !== "again";
+  });
+  const fresh = cells.filter((c) => !mem[c.id]);
   const size = warmup ? 20 : kindFilter ? 30 : 40;
+
+  let pool: typeof cells;
+  if (warmup) {
+    pool = fillUnique(weak, [...due, ...learning, ...fresh, ...cells], size);
+  } else {
+    pool = fillUnique(due, [...learning, ...fresh, ...cells], size);
+  }
+
   return {
-    queue: shuffle(pool).slice(0, Math.min(size, pool.length || 1)),
+    queue: pool.length ? pool : cells.slice(0, 1),
     masteryStart,
     focused: false as const,
   };
+}
+
+function fillUnique<T extends { id: string }>(
+  primary: T[],
+  secondary: T[],
+  size: number,
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const list of [shuffle(primary), shuffle(secondary)]) {
+    for (const item of list) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      out.push(item);
+      if (out.length >= size) return out;
+    }
+  }
+  return out;
 }
 
 function DrillInner() {
@@ -98,6 +125,7 @@ function DrillInner() {
 
   const isClient = useIsClient();
   const rules = useRules();
+  const autoAdvancePref = useAutoAdvance();
   const reduceMotion = useReducedMotion();
   const [sessionKey, setSessionKey] = useState(0);
   const [index, setIndex] = useState(0);
@@ -201,21 +229,13 @@ function DrillInner() {
   }, [picked, done, advice, answer, visibleChoices]);
 
   useEffect(() => {
-    if (!picked || !advice || picked !== advice.action) return;
-    if (reduceMotion) return;
-    const t = window.setTimeout(() => {
-      feedback("advance");
-      next();
-    }, 650);
-    return () => window.clearTimeout(t);
-  }, [picked, advice, next, reduceMotion]);
-
-  useEffect(() => {
     if (!done || recorded.current || totalAsked === 0) return;
     recorded.current = true;
     const pct = Math.round((correctCount / totalAsked) * 100);
     recordSession(pct, bestStreak);
   }, [done, totalAsked, correctCount, bestStreak]);
+
+  // Auto-advance + Invio/Spazio vivono in Feedback (un solo passaggio, no doppio skip).
 
   if (!isClient || !session) {
     return <LoadingMark label="Carte…" />;
@@ -342,63 +362,46 @@ function DrillInner() {
 
   return (
     <PageEnter>
-      <header>
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-bright">
-              {title}
-            </p>
-            <h1 className="font-display text-3xl text-ivory">
-              {index + 1}
-              <span className="text-mist">/{queue.length}</span>
-            </h1>
-          </div>
+      <PageHeader
+        size="session"
+        eyebrow={title}
+        title={
+          <>
+            {index + 1}
+            <span className="text-mist">/{queue.length}</span>
+          </>
+        }
+        actions={
           <Link href="/" className="ghost-btn no-underline">
             Esci
           </Link>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-sm text-mist">
-          <span>
-            {correctCount} ok
-            {streak > 1 ? ` · streak ${streak}` : ""}
-          </span>
-          <span>~{Math.max(1, queue.length - index)} rimaste</span>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-felt-card/70">
-          <motion.div
-            className="h-full rounded-full bg-champagne"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.25 }}
-          />
-        </div>
-        {!warmup && !focused && (
-          <div className="mt-4">
-            <KindFilter value={kindFilter ?? ""} />
-          </div>
-        )}
-      </header>
-
-      <div className="mt-8 flex justify-center gap-5">
-        <div className="text-center">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-mist">
-            Banco
-          </p>
-          <PlayingCard rank={current.dealerUp} />
-        </div>
-        <div className="text-center">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-mist">
-            Tu
-          </p>
-          <div className="flex gap-2">
-            {current.cards.map((c, i) => (
-              <PlayingCard key={i} rank={c} delay={i * 0.04} />
-            ))}
-          </div>
-          <p className="mt-2 text-xs font-medium text-champagne-bright">
-            {handLabel(current.cards)}
-          </p>
-        </div>
+        }
+      />
+      <div className="mt-3 flex items-center justify-between text-sm text-mist">
+        <span>
+          {correctCount} ok
+          {streak > 1 ? ` · streak ${streak}` : ""}
+        </span>
+        <span>~{Math.max(1, queue.length - index)} rimaste</span>
       </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-felt-card/70">
+        <motion.div
+          className="h-full rounded-full bg-champagne"
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.25 }}
+        />
+      </div>
+      {!warmup && !focused && (
+        <div className="mt-4">
+          <KindFilter value={kindFilter ?? ""} />
+        </div>
+      )}
+
+      <HandStage
+        dealer={current.dealerUp}
+        playerCards={current.cards}
+        playerHandLabel={handLabel(current.cards)}
+      />
 
       <p className="mt-7 text-center text-sm font-medium text-mist">
         Cosa fai in questa mano?
@@ -415,7 +418,7 @@ function DrillInner() {
             <motion.button
               key={c}
               type="button"
-              whileTap={{ scale: 0.97 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.97 }}
               disabled={revealed}
               onClick={() => answer(c)}
               className={`flex min-h-[3.5rem] items-center justify-center rounded-2xl border px-3 py-3.5 text-[15px] font-semibold transition ${
@@ -437,9 +440,10 @@ function DrillInner() {
       {revealed && (
         <Feedback
           advice={advice}
+          picked={picked!}
           ok={ok}
           onNext={next}
-          autoAdvancing={ok && !reduceMotion}
+          autoAdvancing={ok && autoAdvancePref && !reduceMotion}
         />
       )}
     </PageEnter>
@@ -448,33 +452,98 @@ function DrillInner() {
 
 function Feedback({
   advice,
+  picked,
   ok,
   onNext,
   autoAdvancing,
 }: {
   advice: Advice;
+  picked: Action;
   ok: boolean;
   onNext: () => void;
   autoAdvancing: boolean;
 }) {
+  const advanced = useRef(false);
+
+  const go = useCallback(() => {
+    if (advanced.current) return;
+    advanced.current = true;
+    feedback("advance");
+    onNext();
+  }, [onNext]);
+
+  useEffect(() => {
+    if (!autoAdvancing) return;
+    const t = window.setTimeout(go, AUTO_ADVANCE_MS);
+    return () => window.clearTimeout(t);
+  }, [autoAdvancing, go]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      go();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="surface mt-6 rounded-3xl p-5"
+      className="surface mt-6 overflow-hidden rounded-3xl p-5"
+      role="status"
+      aria-live="polite"
     >
       <p className={`font-display text-3xl ${ok ? "text-ok" : "text-danger"}`}>
         {ok ? "Corretto" : "Quasi"}
       </p>
+      {!ok && (
+        <p className="mt-2 text-[15px] font-semibold text-ivory">
+          Era{" "}
+          <span className="text-ok">{ACTION_LABELS[advice.action]}</span>
+          <span className="font-normal text-mist">
+            {" "}
+            · hai scelto {ACTION_LABELS[picked]}
+          </span>
+        </p>
+      )}
       <p className="mt-2 text-[15px] leading-relaxed text-mist">{advice.reason}</p>
       {advice.fallbackNote && (
         <p className="mt-2 text-sm text-champagne-bright">{advice.fallbackNote}</p>
       )}
       {autoAdvancing ? (
-        <p className="mt-4 text-xs text-mist">Avanti…</p>
+        <div className="mt-5">
+          <div className="h-1 overflow-hidden rounded-full bg-felt-card/70">
+            <motion.div
+              className="h-full rounded-full bg-champagne/80"
+              initial={{ width: "100%" }}
+              animate={{ width: "0%" }}
+              transition={{ duration: AUTO_ADVANCE_MS / 1000, ease: "linear" }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={go}
+            className="text-link mt-1"
+          >
+            Avanti subito · Invio
+          </button>
+        </div>
       ) : (
-        <button type="button" onClick={onNext} className="btn-primary mt-5">
-          Avanti
+        <button type="button" onClick={go} className="btn-primary mt-5">
+          Avanti · Invio
         </button>
       )}
     </motion.div>

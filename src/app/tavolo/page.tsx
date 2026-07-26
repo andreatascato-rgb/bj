@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   evaluateHand,
   getAdvice,
@@ -13,13 +13,14 @@ import {
 } from "@/engine";
 import { useIsClient, useRules } from "@/lib/client";
 import { feedback } from "@/lib/feedback";
-import Link from "next/link";
-import { PlayingCard, RankPicker } from "@/components/ui/RankPicker";
+import { RankPicker } from "@/components/ui/RankPicker";
 import {
   LoadingMark,
   PageEnter,
   StepRail,
 } from "@/components/ui/PageChrome";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { HandStage } from "@/components/ui/HandStage";
 import { popIn } from "@/lib/motion";
 
 type Phase = "dealer" | "insurance" | "cards" | "result";
@@ -27,20 +28,31 @@ type Phase = "dealer" | "insurance" | "cards" | "result";
 export default function TavoloPage() {
   const isClient = useIsClient();
   const rules = useRules();
+  const reduceMotion = useReducedMotion();
   const [dealer, setDealer] = useState<DealerUp | null>(null);
   const [cards, setCards] = useState<Rank[]>([]);
   const [phase, setPhase] = useState<Phase>("dealer");
   const [splitHands, setSplitHands] = useState<[Rank[], Rank[]] | null>(null);
   const [activeSplit, setActiveSplit] = useState<0 | 1>(0);
   const [insuranceSeen, setInsuranceSeen] = useState(false);
+  /** After a double, that hand is locked (one card only, then stop). */
+  const [doubleLocked, setDoubleLocked] = useState(false);
+  const [splitDoubleLocked, setSplitDoubleLocked] = useState<
+    [boolean, boolean]
+  >([false, false]);
 
   const activeCards = splitHands ? splitHands[activeSplit] : cards;
   const hand = evaluateHand(activeCards);
+  const handDoubled = splitHands
+    ? splitDoubleLocked[activeSplit]
+    : doubleLocked;
 
   const advice = useMemo(() => {
     if (dealer == null || activeCards.length < 2) return null;
+    // After double the hand is closed — no further strategy lookup.
+    if (handDoubled) return null;
     return getAdvice(activeCards, dealer, rules);
-  }, [rules, dealer, activeCards]);
+  }, [rules, dealer, activeCards, handDoubled]);
 
   const insurance = useMemo(() => getInsuranceAdvice(1), []);
   const bustAnnounced = useRef(false);
@@ -60,6 +72,8 @@ export default function TavoloPage() {
     setDealer(r);
     setCards([]);
     setSplitHands(null);
+    setDoubleLocked(false);
+    setSplitDoubleLocked([false, false]);
     if (r === 1) {
       setPhase("insurance");
       setInsuranceSeen(false);
@@ -67,6 +81,27 @@ export default function TavoloPage() {
       setPhase("cards");
     }
   }, []);
+
+  useEffect(() => {
+    if (phase !== "insurance") return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      setInsuranceSeen(true);
+      setPhase("cards");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase]);
 
   if (!isClient) return <LoadingMark />;
 
@@ -84,21 +119,51 @@ export default function TavoloPage() {
     setActiveSplit(0);
     setPhase("dealer");
     setInsuranceSeen(false);
+    setDoubleLocked(false);
+    setSplitDoubleLocked([false, false]);
+  }
+
+  function markDoubleLocked() {
+    if (splitHands) {
+      setSplitDoubleLocked((prev) => {
+        const next: [boolean, boolean] = [...prev];
+        next[activeSplit] = true;
+        return next;
+      });
+    } else {
+      setDoubleLocked(true);
+    }
+  }
+
+  function clearDoubleLockedOnUndo() {
+    if (splitHands) {
+      setSplitDoubleLocked((prev) => {
+        const next: [boolean, boolean] = [...prev];
+        next[activeSplit] = false;
+        return next;
+      });
+    } else {
+      setDoubleLocked(false);
+    }
   }
 
   function undo() {
     if (splitHands) {
       const next = [...splitHands] as [Rank[], Rank[]];
       if (next[activeSplit].length > 1) {
+        const wasDoubled = splitDoubleLocked[activeSplit];
         next[activeSplit] = next[activeSplit].slice(0, -1);
         setSplitHands(next);
+        if (wasDoubled) clearDoubleLockedOnUndo();
         setPhase(next[activeSplit].length < 2 ? "cards" : "result");
       }
       return;
     }
     if (cards.length > 0) {
       const next = cards.slice(0, -1);
+      const wasDoubled = doubleLocked;
       setCards(next);
+      if (wasDoubled) setDoubleLocked(false);
       setPhase(next.length < 2 ? "cards" : "result");
       return;
     }
@@ -120,15 +185,27 @@ export default function TavoloPage() {
   }
 
   function addCard(r: Rank) {
+    const awaitingDouble =
+      phase === "result" &&
+      !handDoubled &&
+      activeCards.length === 2 &&
+      advice?.action === "double";
+
     if (splitHands) {
       const next = [...splitHands] as [Rank[], Rank[]];
       next[activeSplit] = [...next[activeSplit], r];
       setSplitHands(next);
+      if (awaitingDouble) markDoubleLocked();
       setPhase("result");
       return;
     }
     const next = [...cards, r];
     setCards(next);
+    if (awaitingDouble) {
+      setDoubleLocked(true);
+      setPhase("result");
+      return;
+    }
     if (next.length >= 2 && dealer != null) setPhase("result");
   }
 
@@ -136,18 +213,32 @@ export default function TavoloPage() {
     if (cards.length !== 2 || cards[0] !== cards[1]) return;
     setSplitHands([[cards[0]], [cards[1]]]);
     setActiveSplit(0);
+    setDoubleLocked(false);
+    setSplitDoubleLocked([false, false]);
     setPhase("cards");
   }
 
   const isBust = hand.busted;
+  const doubleResolved = handDoubled && activeCards.length >= 3;
+
+  const awaitingDoubleCard =
+    phase === "result" &&
+    !isBust &&
+    !handDoubled &&
+    activeCards.length === 2 &&
+    advice?.action === "double";
 
   const needsHit =
+    !handDoubled &&
     advice?.action === "hit" &&
     !hand.busted &&
     hand.total < 21 &&
     !hand.isBlackjack;
+
   const showHitPicker =
     phase === "result" &&
+    !awaitingDoubleCard &&
+    !doubleResolved &&
     !!advice &&
     !isBust &&
     ((splitHands != null && splitHands[activeSplit].length < 2) ||
@@ -156,72 +247,70 @@ export default function TavoloPage() {
         advice.action === "hit" &&
         !hand.busted &&
         hand.total < 21));
+
   const showSplitTrack =
-    phase === "result" && advice?.action === "split" && !splitHands;
+    phase === "result" &&
+    !handDoubled &&
+    advice?.action === "split" &&
+    !splitHands;
+
+  const showResultPanel =
+    phase === "result" && (advice != null || doubleResolved || isBust);
+
   const showNewHand =
     phase === "result" &&
-    !!advice &&
-    (isBust || (!showHitPicker && !showSplitTrack));
+    (isBust ||
+      doubleResolved ||
+      (!!advice &&
+        !awaitingDoubleCard &&
+        !showHitPicker &&
+        !showSplitTrack));
+
+  const motionIn = reduceMotion
+    ? { initial: false as const, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : popIn;
+
+  const resultTitle = isBust
+    ? "Sballato"
+    : doubleResolved
+      ? handLabel(activeCards)
+      : advice?.label ?? "";
+
+  const resultReason = isBust
+    ? "Hai superato 21. La mano è chiusa."
+    : doubleResolved
+      ? "Raddoppio concluso — una sola carta, poi stop."
+      : (advice?.reason ?? "");
 
   return (
     <PageEnter>
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-champagne-bright">
-            Tavolo
-          </p>
-          <h1 className="font-display text-3xl text-ivory">Consulto</h1>
-          <Link
-            href="/regole/"
-            className="mt-1 inline-block text-[10px] font-semibold tracking-wide text-champagne-bright/80 no-underline"
-          >
-            {rulesLabel(rules)}
-          </Link>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={undo} className="ghost-btn">
-            Annulla
-          </button>
-          <button type="button" onClick={reset} className="ghost-btn">
-            Nuova
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Tavolo"
+        title="Consulto"
+        rulesLabel={rulesLabel(rules)}
+        actions={
+          <>
+            <button type="button" onClick={undo} className="ghost-btn">
+              Annulla
+            </button>
+            <button type="button" onClick={reset} className="ghost-btn">
+              Nuova
+            </button>
+          </>
+        }
+      />
 
       <div className="mt-5">
         <StepRail steps={["Banco", "Tu", "Mossa"]} current={stepIndex} />
       </div>
 
-      <div className="mt-8 flex items-end justify-center gap-4">
-        <div className="text-center">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-mist">
-            Banco
-          </p>
-          {dealer != null ? (
-            <PlayingCard rank={dealer} delay={0} />
-          ) : (
-            <PlayingCard rank={null} />
-          )}
-        </div>
-        <div className="mb-10 h-px w-6 bg-champagne/30" />
-        <div className="text-center">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-mist">
-            Tu
-            {activeCards.length >= 2
-              ? ` · ${handLabel(activeCards)}`
-              : ""}
-          </p>
-          <div className="flex gap-2">
-            {activeCards.length === 0 ? (
-              <PlayingCard rank={null} />
-            ) : (
-              activeCards.map((c, i) => (
-                <PlayingCard key={`${c}-${i}`} rank={c} delay={i * 0.05} />
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+      <HandStage
+        dealer={dealer}
+        playerCards={activeCards}
+        playerHandLabel={
+          activeCards.length >= 2 ? handLabel(activeCards) : null
+        }
+      />
 
       {splitHands && (
         <div className="mt-4 flex justify-center gap-2">
@@ -233,7 +322,7 @@ export default function TavoloPage() {
                 setActiveSplit(i);
                 setPhase(splitHands[i].length < 2 ? "cards" : "result");
               }}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
+              className={`min-h-11 rounded-full px-4 py-2.5 text-sm font-semibold ${
                 activeSplit === i
                   ? "bg-champagne text-felt-deep"
                   : "bg-felt-card/70 text-mist"
@@ -241,6 +330,7 @@ export default function TavoloPage() {
             >
               Mano {i === 0 ? "A" : "B"} ·{" "}
               {evaluateHand(splitHands[i]).total || "—"}
+              {splitDoubleLocked[i] ? " · D" : ""}
             </button>
           ))}
         </div>
@@ -250,7 +340,7 @@ export default function TavoloPage() {
         {phase === "insurance" && dealer === 1 && (
           <motion.div
             key="ins"
-            {...popIn}
+            {...motionIn}
             className="surface mt-8 rounded-3xl p-5 text-center"
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-champagne-bright">
@@ -272,29 +362,31 @@ export default function TavoloPage() {
           </motion.div>
         )}
 
-        {phase === "result" && advice && (
+        {showResultPanel && (
           <motion.div
-            key={advice.label + advice.playerKey + activeCards.join("-")}
-            {...popIn}
+            key={
+              (advice?.label ?? "done") +
+              String(handDoubled) +
+              activeCards.join("-")
+            }
+            {...motionIn}
             className="mt-8 text-center"
           >
             <div className="surface mx-auto max-w-sm rounded-3xl px-5 py-6">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-champagne-bright">
-                {isBust ? "Risultato" : "Mossa"}
+                {isBust || doubleResolved ? "Risultato" : "Mossa"}
               </p>
               <p
                 className={`mt-2 font-display text-6xl font-semibold ${
                   isBust ? "text-danger" : "text-champagne-bright"
                 }`}
               >
-                {isBust ? "Sballato" : advice.label}
+                {resultTitle}
               </p>
               <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-mist">
-                {isBust
-                  ? "Hai superato 21. La mano è chiusa."
-                  : advice.reason}
+                {resultReason}
               </p>
-              {!isBust && advice.fallbackNote && (
+              {!isBust && !doubleResolved && advice?.fallbackNote && (
                 <p className="mt-3 text-sm text-champagne-bright">
                   {advice.fallbackNote}
                 </p>
@@ -308,6 +400,15 @@ export default function TavoloPage() {
               >
                 Traccia lo split
               </button>
+            )}
+            {awaitingDoubleCard && (
+              <div className="mt-6">
+                <RankPicker
+                  label="Carta del raddoppio"
+                  value={null}
+                  onSelect={addCard}
+                />
+              </div>
             )}
             {showHitPicker && (
               <div className="mt-6">

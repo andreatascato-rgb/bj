@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const LINKS = [
   {
@@ -107,8 +107,12 @@ const LINKS = [
 
 export function AppNav() {
   const pathname = usePathname();
+  const reduce = useReducedMotion();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-felt-line bg-felt-deep/92 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+    <nav
+      aria-label="Navigazione principale"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-felt-line bg-felt-deep/92 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+    >
       <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-1 px-2 pt-2 pb-2">
         {LINKS.map((l) => {
           const active =
@@ -121,15 +125,19 @@ export function AppNav() {
                 href={l.href}
                 aria-current={active ? "page" : undefined}
                 className={`relative z-10 flex min-h-[3.25rem] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 select-none transition ${
-                  active ? "text-champagne-bright" : "text-ivory/70"
+                  active ? "text-champagne-bright" : "text-mist"
                 }`}
               >
                 {active ? (
-                  <motion.span
-                    layoutId="nav-pill"
-                    className="absolute inset-0 -z-10 rounded-xl bg-champagne/15"
-                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  />
+                  reduce ? (
+                    <span className="absolute inset-0 -z-10 rounded-xl bg-champagne/15" />
+                  ) : (
+                    <motion.span
+                      layoutId="nav-pill"
+                      className="absolute inset-0 -z-10 rounded-xl bg-champagne/15"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )
                 ) : null}
                 <svg
                   width="22"

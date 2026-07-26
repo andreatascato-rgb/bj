@@ -11,29 +11,30 @@ Italian recreational blackjack player. Wants correct basic strategy and enough m
 3. **Prepare** — 5-minute warm-up on weak cells before a session
 4. **Graduate** — see mastery and know when the app can stay home
 
-## Modes (v0.2.0)
+## Modes (v0.3.0)
 
 | Mode | Route | Job |
 | --- | --- | --- |
-| Studio | `/` | Home, mastery per kind, Focus oggi, install hint |
-| Tavolo | `/tavolo/` | Live consult: Banco → (assicurazione) → Tu → Mossa |
+| Studio | `/` | Home, mastery, Focus, install hint |
+| Tavolo | `/tavolo/` | Live: Banco → Tu → mossa (hit / double card / split) |
 | Allena | `/allenamento/` | Drill / warm-up / `?cell=` with SM-2 |
 | Tabella | `/tabella/` | Chart + heatmap → allena cella |
-| Regole | `/regole/` | Presets + fine rules + backup JSON + reset |
+| Regole | `/regole/` | Preset dropdown + personalizzato + backup |
 
 Phones are often banned at tables — Studio/Allena are the path to autonomy; Tavolo is optional.
 
 ## Onboarding
 
-First launch asks hole-card policy (ENHC vs Peek) and applies Italia or USA-leaning preset. Bottom nav hidden until done. Can re-run from Regole.
+First launch asks hole-card policy (ENHC vs Peek) and applies Saint-Vincent or USA-leaning preset. Bottom nav hidden until done; deep links redirect to Studio until onboarded. Can re-run from Regole.
 
 ## Learning model
 
-- ~150 drill cells (hard / soft / pairs × dealer upcards)
+- ~280 drill cells (hard 8–17 / soft 13–20 / pairs × 10 dealer upcards)
 - Simplified SM-2 intervals in `src/learning/sm2.ts`
-- Mastery % = share of cells at solid strength
-- Warm-up prefers weak then due cells (cap ~20)
-- Full drill: due-first, else full pool
+- Solid cell: ≥3 correct reviews, easiness ≥ 2.2, interval ≥ 1 day
+- Mastery % = weighted progress toward solid across all cells
+- Warm-up: weak then due (cap ~20); full drill fills due then learning/new
+- Focus/`?cell=`: 4 reps of the same situation
 
 ## UX craft (locked)
 

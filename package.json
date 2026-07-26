@@ -1,14 +1,15 @@
 {
   "name": "mano",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "npx --yes serve out",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.23.12",

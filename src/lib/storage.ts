@@ -6,6 +6,7 @@ const MEMORY_KEY = "mano.memory.v1";
 const ONBOARD_KEY = "mano.onboarded.v1";
 const STATS_KEY = "mano.stats.v1";
 const INSTALL_HINT_KEY = "mano.installHint.v1";
+const AUTO_ADVANCE_KEY = "mano.autoAdvance.v1";
 const BACKUP_VERSION = 1;
 
 export interface AppStats {
@@ -24,6 +25,8 @@ export interface ManoBackup {
   onboarded: boolean;
   /** Optional — older backups may omit */
   sound?: boolean;
+  /** Optional — older backups may omit; default off */
+  autoAdvance?: boolean;
 }
 
 const DEFAULT_STATS: AppStats = {
@@ -43,6 +46,7 @@ let statsCache: AppStats = DEFAULT_STATS;
 let statsRaw: string | null | undefined;
 let onboardCache: boolean | undefined;
 let installHintCache: boolean | undefined;
+let autoAdvanceCache: boolean | undefined;
 
 function bumpStorage(): void {
   listeners.forEach((l) => l());
@@ -58,6 +62,7 @@ export function subscribeStorage(cb: () => void): () => void {
     statsRaw = undefined;
     onboardCache = undefined;
     installHintCache = undefined;
+    autoAdvanceCache = undefined;
     cb();
   };
   if (typeof window !== "undefined") {
@@ -186,6 +191,20 @@ export function dismissInstallHint(): void {
   bumpStorage();
 }
 
+/** Allena: auto-advance after a correct answer. Default off (manual). */
+export function isAutoAdvanceEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  if (autoAdvanceCache !== undefined) return autoAdvanceCache;
+  autoAdvanceCache = localStorage.getItem(AUTO_ADVANCE_KEY) === "1";
+  return autoAdvanceCache;
+}
+
+export function setAutoAdvanceEnabled(on: boolean): void {
+  localStorage.setItem(AUTO_ADVANCE_KEY, on ? "1" : "0");
+  autoAdvanceCache = on;
+  bumpStorage();
+}
+
 export function clearMemory(): void {
   localStorage.removeItem(MEMORY_KEY);
   memoryRaw = null;
@@ -223,6 +242,7 @@ export function exportBackup(): ManoBackup {
     stats: loadStats(),
     onboarded: isOnboarded(),
     sound,
+    autoAdvance: isAutoAdvanceEnabled(),
   };
 }
 
@@ -246,6 +266,9 @@ export function importBackup(data: unknown): { ok: true } | { ok: false; error: 
   saveStats({ ...DEFAULT_STATS, ...(b.stats ?? {}) });
   if (typeof b.sound === "boolean") {
     localStorage.setItem("mano.sound.v1", b.sound ? "1" : "0");
+  }
+  if (typeof b.autoAdvance === "boolean") {
+    setAutoAdvanceEnabled(b.autoAdvance);
   }
   if (b.onboarded) setOnboarded();
   else resetOnboarding();

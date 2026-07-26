@@ -79,13 +79,16 @@ export function isLearning(mem: CardMemory): boolean {
 }
 
 export function isSolid(mem: CardMemory): boolean {
-  return mem.repetitions >= 2 && mem.easiness >= 2.2;
+  return (
+    mem.repetitions >= 3 && mem.easiness >= 2.2 && mem.interval >= 1
+  );
 }
 
 /** Partial credit so early practice moves the mastery bar. */
 function cellProgress(mem: CardMemory): number {
   if (isSolid(mem)) return 1;
-  if (isLearning(mem)) return 0.45;
+  if (mem.repetitions >= 2 && mem.lastResult === "good") return 0.7;
+  if (isLearning(mem)) return 0.4;
   if (mem.lastResult === "again") return 0.12;
   if (mem.repetitions > 0) return 0.2;
   return 0;

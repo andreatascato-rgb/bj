@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Personal blackjack basic-strategy coach. Europe-first. Zero cost. You (the agent) are the sole builder; the user evaluates via chat only.
 
-**Current freeze:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) — **v0.2.0** (2026-07-25). Read it before changing product shape.
+**Current freeze:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) — **v0.3.0** (2026-07-26). Read it before changing product shape.
 
 ## Product promise
 
@@ -64,7 +64,7 @@ public/             manifest, sw.js, icon
 1. **Onboarding** → hole-card + preset → Studio (nav hidden)
 2. **Studio** → mastery + kind bars + Focus oggi → Allena / Tabella / Tavolo; install hint dismissible
 3. **Allena** → queue SM-2 (`?cell=` for one situation) → keyboard 1–5 · auto-advance on correct → end screen (streak, missed)
-4. **Tavolo** → Banco → (insurance if A) → carte → mossa → hit/split or bust → Nuova mano; rank keys A/2–9/0
+4. **Tavolo** → Banco → (insurance if A) → carte → mossa → hit/double card/split track or bust → Nuova mano; rank keys A/2–9/0
 5. **Tabella** → hard/soft/pair + heatmap → cell panel → Allena situazione
 6. **Regole** → presets + fine rules → save; export/import backup; reset progress; re-onboard
 

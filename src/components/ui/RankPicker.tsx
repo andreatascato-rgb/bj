@@ -48,6 +48,7 @@ interface Props {
 }
 
 export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
+  const reduce = useReducedMotion();
   useEffect(() => {
     if (!keyboard) return;
     function onKey(e: KeyboardEvent) {
@@ -84,7 +85,7 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
             <motion.button
               key={r.label}
               type="button"
-              whileTap={{ scale: 0.94 }}
+              whileTap={reduce ? undefined : { scale: 0.94 }}
               onClick={() => {
                 hapticTap();
                 onSelect(r.value);
@@ -103,7 +104,7 @@ export function RankPicker({ label, value, onSelect, keyboard = true }: Props) {
         })}
       </div>
       {keyboard && (
-        <p className="mt-2 text-center text-[10px] text-mist/60">
+        <p className="mt-2 text-center text-[10px] text-mist">
           Tasti A · 2–9 · 0/T
         </p>
       )}
@@ -176,7 +177,8 @@ export function PlayingCard({
   ) : (
     <div
       className="relative h-[7.25rem] w-[5.1rem] overflow-hidden rounded-[0.85rem] border border-black/12 bg-gradient-to-br from-[#fffdf8] via-[#f7efe3] to-[#ebddc8] text-[#1a1a1a] shadow-[0_12px_28px_rgba(0,0,0,0.38)]"
-      aria-label={`${label} ${suit}`}
+      role="img"
+      aria-label={`${label} di ${suit === "♥" ? "cuori" : suit === "♦" ? "quadri" : suit === "♠" ? "picche" : "fiori"}`}
     >
       {/* Top-left index — classic corner stack */}
       <div className="absolute top-[0.35rem] left-[0.28rem] z-10">

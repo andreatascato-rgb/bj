@@ -64,7 +64,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             </p>
 
             <div className="surface mt-8 space-y-3 rounded-2xl p-4">
-              <Row title="Impara" text="Drill e warm-up sulle ~150 situazioni" />
+              <Row title="Impara" text="Drill e warm-up su hard, soft e coppie (~280 situazioni)" />
               <Row title="Consulta" text="Risposta rapida in modalità Tavolo" />
               <Row title="Gratis" text="Niente account. Tutto resta sul telefono" />
             </div>
@@ -122,7 +122,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <button
               type="button"
               onClick={() => setStep(0)}
-              className="mt-auto pt-8 text-sm text-mist underline-offset-4 hover:text-ivory hover:underline"
+              className="text-link mt-auto"
             >
               Indietro
             </button>
@@ -134,7 +134,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <h2 className="font-display text-3xl leading-tight text-ivory">
               Conferma il tuo tavolo
             </h2>
-            <p className="mt-3 text-base text-mist">
+            <p className="mt-3 text-base leading-relaxed text-mist">
               Potrai cambiare tutto in Regole in qualsiasi momento.
             </p>
 
@@ -152,29 +152,33 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => finish(hole === "peek" ? "usa" : "saintVincent")}
-              className="btn-primary mt-6"
-            >
-              Entra in Studio
-            </button>
-            <button type="button" onClick={() => finish("custom")} className="btn-secondary mt-3">
-              Salva e regola dopo
-            </button>
-
-            <p className="mt-6 text-center text-xs leading-relaxed text-mist/80">
-              Al casinò il telefono può essere vietato: usa Studio per imparare,
-              Tavolo solo se consentito.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="mt-4 text-sm text-mist underline-offset-4 hover:text-ivory hover:underline"
-            >
-              Indietro
-            </button>
+            <div className="mt-auto pt-8">
+              <button
+                type="button"
+                onClick={() => finish(hole === "peek" ? "usa" : "saintVincent")}
+                className="btn-primary"
+              >
+                Entra in Studio
+              </button>
+              <button
+                type="button"
+                onClick={() => finish("custom")}
+                className="btn-secondary mt-3"
+              >
+                Salva e regola dopo
+              </button>
+              <p className="mt-5 text-center text-xs leading-relaxed text-mist/80">
+                Al casinò il telefono può essere vietato: usa Studio per imparare,
+                Tavolo solo se consentito.
+              </p>
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-link mt-1"
+              >
+                Indietro
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

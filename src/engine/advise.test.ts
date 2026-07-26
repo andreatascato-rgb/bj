@@ -98,6 +98,7 @@ describe("basic strategy engine", () => {
   it("surrender fallback: Rh becomes hit when surrender off", () => {
     const a = getAdvice([10, 6], 10, { ...peek, surrender: false });
     expect(a?.action).toBe("hit");
+    expect(a?.fallbackNote).toMatch(/Resa/);
   });
 
   it("surrender when allowed: hard 16 vs 10", () => {
@@ -105,8 +106,43 @@ describe("basic strategy engine", () => {
     expect(a?.action).toBe("surrender");
   });
 
+  it("soft 14 (A,3) vs 4 hits; soft 15 (A,4) vs 5 doubles when double any", () => {
+    const sv = { ...enhc, double: "any" as const };
+    expect(getAdvice([1, 3], 4, sv)?.action).toBe("hit");
+    expect(getAdvice([1, 4], 5, sv)?.action).toBe("double");
+    expect(getAdvice([1, 3], 5, sv)?.action).toBe("double");
+  });
+
+  it("soft doubles fall back to hit under EU 9–11 double", () => {
+    expect(getAdvice([1, 4], 5, enhc)?.action).toBe("hit");
+    expect(getAdvice([1, 4], 5, enhc)?.fallbackNote).toMatch(/Raddoppio/);
+  });
+
   it("insurance basic strategy is always no", () => {
     const a = getInsuranceAdvice(1);
     expect(a.action).toBe("insurance_no");
+    expect(a.reason).toMatch(/Rifiuta/);
+  });
+
+  it("DAS off: Ph pairs hit with note", () => {
+    const noDas: TableRules = { ...peek, das: false };
+    const a = getAdvice([2, 2], 2, noDas);
+    expect(a?.action).toBe("hit");
+    expect(a?.fallbackNote).toMatch(/DAS/);
+  });
+
+  it("H17: hard 17 vs Ace surrenders when allowed else stands", () => {
+    const h17: TableRules = { ...peek, soft17: "H17", surrender: true };
+    expect(getAdvice([10, 7], 1, h17)?.action).toBe("surrender");
+    const noSur: TableRules = { ...peek, soft17: "H17", surrender: false };
+    expect(getAdvice([10, 7], 1, noSur)?.action).toBe("stand");
+    expect(getAdvice([10, 7], 1, noSur)?.fallbackNote).toMatch(/Resa/);
+  });
+
+  it("ENHC no-extra reason only on demoted money spots", () => {
+    const e11 = getAdvice([5, 6], 10, enhc);
+    expect(e11?.reason).toMatch(/soldi extra/);
+    const e16 = getAdvice([10, 6], 10, enhc);
+    expect(e16?.reason).not.toMatch(/soldi extra/);
   });
 });

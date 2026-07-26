@@ -73,15 +73,24 @@ function resolveCode(
     case "Rh":
       return rules.surrender && cards.length === 2
         ? { action: "surrender" }
-        : { action: "hit" };
+        : {
+            action: "hit",
+            fallbackNote: "Resa non disponibile con le tue regole → Carta",
+          };
     case "Rs":
       return rules.surrender && cards.length === 2
         ? { action: "surrender" }
-        : { action: "stand" };
+        : {
+            action: "stand",
+            fallbackNote: "Resa non disponibile con le tue regole → Stai",
+          };
     case "Rp":
       return rules.surrender && cards.length === 2
         ? { action: "surrender" }
-        : { action: "split" };
+        : {
+            action: "split",
+            fallbackNote: "Resa non disponibile con le tue regole → Dividi",
+          };
     default:
       return { action: "hit" };
   }
@@ -133,16 +142,17 @@ function applyRuleOverlays(
   dealerUp: DealerUp,
   code: ChartCode,
   rules: TableRules,
-): ChartCode {
+): { code: ChartCode; beforeEnhc: ChartCode } {
   let next = code;
   const key = overrideKey(kind, playerKey, dealerUp);
   if (rules.soft17 === "H17") {
     next = H17_OVERRIDES[key] ?? next;
   }
+  const beforeEnhc = next;
   if (rules.holeCard === "enhc") {
     next = ENHC_OVERRIDES[key] ?? next;
   }
-  return next;
+  return { code: next, beforeEnhc };
 }
 
 function reasonFor(
@@ -150,7 +160,7 @@ function reasonFor(
   kind: Advice["handKind"],
   totalLabel: string,
   dealerUp: DealerUp,
-  rules: TableRules,
+  enhcNoExtra: boolean,
 ): string {
   const d = dealerUp === 1 ? "A" : String(dealerUp);
   if (action === "surrender") {
@@ -168,7 +178,7 @@ function reasonFor(
     }
     return `${totalLabel} vs ${d}: stai — non migliorare battendo il banco da qui.`;
   }
-  if (rules.holeCard === "enhc" && (dealerUp === 1 || dealerUp === 10)) {
+  if (enhcNoExtra) {
     return `${totalLabel} vs ${d}: carta — con ENHC non mettere soldi extra contro 10/A.`;
   }
   if (kind === "soft") {
@@ -218,7 +228,7 @@ export function getAdvice(
   }
 
   const base = lookupBase(cards, dealerUp);
-  const code = applyRuleOverlays(
+  const { code, beforeEnhc } = applyRuleOverlays(
     base.kind,
     base.playerKey,
     dealerUp,
@@ -226,6 +236,12 @@ export function getAdvice(
     rules,
   );
   const resolved = resolveCode(code, rules, cards, v.total);
+  const moneyCodes: ChartCode[] = ["Dh", "Ds", "P", "Ph", "Rp"];
+  const enhcNoExtra =
+    rules.holeCard === "enhc" &&
+    (dealerUp === 1 || dealerUp === 10) &&
+    resolved.action === "hit" &&
+    (beforeEnhc !== code || moneyCodes.includes(beforeEnhc));
 
   return {
     action: resolved.action,
@@ -235,7 +251,7 @@ export function getAdvice(
       base.kind,
       describeHand(cards),
       dealerUp,
-      rules,
+      enhcNoExtra,
     ),
     chartCode: code,
     handKind: base.kind,
@@ -251,7 +267,7 @@ export function getInsuranceAdvice(dealerUp: DealerUp): Advice {
     label: ACTION_LABELS.insurance_no,
     reason:
       dealerUp === 1
-        ? "Basic strategy: rifiuta sempre l'assicurazione (senza card counting)."
+        ? "Rifiuta sempre: senza conteggio l'assicurazione non conviene."
         : "L'assicurazione si offre solo con Asso del banco.",
     chartCode: "H",
     handKind: "hard",

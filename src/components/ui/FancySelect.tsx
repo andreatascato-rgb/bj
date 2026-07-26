@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 export type SelectOption = {
   value: string;
@@ -22,9 +22,15 @@ export function FancySelect({
   ariaLabel: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const reduce = useReducedMotion();
   const selected = options.find((o) => o.value === value) ?? options[0];
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +38,39 @@ export function FancySelect({
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlight((i) => (i + 1) % options.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlight((i) => (i - 1 + options.length) % options.length);
+        return;
+      }
+      if (e.key === "Home") {
+        e.preventDefault();
+        setHighlight(0);
+        return;
+      }
+      if (e.key === "End") {
+        e.preventDefault();
+        setHighlight(options.length - 1);
+        return;
+      }
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const opt = options[highlight];
+        if (opt) {
+          onChange(opt.value);
+          setOpen(false);
+        }
+      }
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
@@ -40,7 +78,7 @@ export function FancySelect({
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, options, highlight, onChange]);
 
   return (
     <div ref={rootRef} className="relative">
@@ -50,8 +88,11 @@ export function FancySelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
-        onClick={() => setOpen((v) => !v)}
-        className={`flex w-full items-center justify-between gap-3 rounded-xl border bg-[#041611] px-4 py-3.5 text-left transition ${
+        onClick={() => {
+          setHighlight(selectedIndex);
+          setOpen((v) => !v);
+        }}
+        className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border bg-felt-deep px-4 py-3.5 text-left transition ${
           open
             ? "border-champagne/60 shadow-[0_0_0_1px_rgba(224,184,106,0.2)]"
             : "border-ivory/14"
@@ -91,18 +132,22 @@ export function FancySelect({
             id={listId}
             role="listbox"
             aria-label={ariaLabel}
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={reduce ? false : { opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-champagne/25 bg-[#041611] p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
+            exit={reduce ? undefined : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: reduce ? 0 : 0.16 }}
+            className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-champagne/25 bg-felt-deep p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
           >
-            {options.map((o) => {
+            {options.map((o, i) => {
               const active = o.value === value;
+              const focused = i === highlight;
               return (
-                <li key={o.value} role="option" aria-selected={active}>
+                <li key={o.value} role="presentation">
                   <button
                     type="button"
+                    role="option"
+                    aria-selected={active}
+                    onMouseEnter={() => setHighlight(i)}
                     onClick={() => {
                       onChange(o.value);
                       setOpen(false);
@@ -110,7 +155,9 @@ export function FancySelect({
                     className={`flex w-full flex-col rounded-xl px-3.5 py-3 text-left transition ${
                       active
                         ? "bg-champagne/15 text-champagne-bright"
-                        : "text-ivory hover:bg-ivory/6"
+                        : focused
+                          ? "bg-ivory/8 text-ivory"
+                          : "text-ivory hover:bg-ivory/6"
                     }`}
                   >
                     <span className="text-[15px] font-semibold">{o.label}</span>
@@ -157,7 +204,7 @@ export function SegmentedControl({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={`grid ${cols} gap-1.5 rounded-xl border border-ivory/12 bg-felt-deep/40 p-1.5`}
+      className={`grid min-h-[3.25rem] ${cols} gap-1.5 rounded-xl border border-ivory/12 bg-felt-deep/40 p-1.5`}
     >
       {options.map((o) => {
         const active = o.value === value;

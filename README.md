@@ -2,17 +2,17 @@
 
 Coach personale di **basic strategy** blackjack — Europa-first, offline, **€0**.
 
-**Versione congelata:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) · **v0.2.0**
+**Versione congelata:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md) · **v0.3.0**
 
 ## Cosa fa
 
 | Sezione | Uso |
 | --- | --- |
 | **Studio** | Mastery, warm-up, prossimo passo |
-| **Tavolo** | Consulto rapido (banco → tue carte → mossa) |
+| **Tavolo** | Consulto live (banco → carte → mossa, anche double/split) |
 | **Allena** | Drill / warm-up con ripetizione spaziata |
 | **Tabella** | Chart + heatmap dei tuoi errori |
-| **Regole** | Preset IT/EU o USA + dettagli tavolo |
+| **Regole** | Preset casinò o personalizzato + backup |
 
 I progressi restano sul **tuo telefono** (niente account).
 

@@ -80,6 +80,11 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* UA default is center; left keeps multi-line control labels coherent */
+  button {
+    text-align: left;
+  }
+
   button,
   .btn-primary,
   .btn-secondary,
@@ -149,14 +154,36 @@
 }
 
 .ghost-btn {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
   border-radius: 0.8rem;
   border: 1px solid rgba(255, 248, 238, 0.16);
   background: rgba(4, 22, 17, 0.35);
-  padding: 0.55rem 0.8rem;
+  padding: 0.55rem 0.9rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--mist);
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+/** Full-width quiet action under primary CTAs — always centered */
+.text-link {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--mist);
+  text-underline-offset: 4px;
+  transition: color 0.15s ease;
+}
+
+.text-link:hover {
+  color: var(--ivory);
+  text-decoration: underline;
 }
 
 @media (hover: hover) and (pointer: fine) {
